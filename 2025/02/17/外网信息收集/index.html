@@ -1,0 +1,196 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#0078E7"><meta name="author" content="John Doe"><meta name="copyright" content="John Doe"><meta name="generator" content="Hexo 7.3.0"><meta name="theme" content="hexo-theme-yun"><title>外网信息收集 | Hexo</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&amp;display=swap" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/star-markdown-css@0.4.1/dist/yun/yun-markdown.min.css"><link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/prism-theme-vars/base.css"><script src="https://fastly.jsdelivr.net/npm/scrollreveal/dist/scrollreveal.min.js" defer></script><script>function initScrollReveal() {
+  [".post-card",".markdown-body img"].forEach((target)=> {
+    ScrollReveal().reveal(target);
+  })
+}
+document.addEventListener("DOMContentLoaded", initScrollReveal);
+document.addEventListener("pjax:success", initScrollReveal);
+</script><link rel="icon" type="image/svg+xml" href="/yun.svg"><link rel="mask-icon" href="/yun.svg" color="#0078E7"><link rel="preload" href="/css/hexo-theme-yun.css" as="style"><link rel="prefetch" href="/js/sidebar.js" as="script"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://fastly.jsdelivr.net/npm/" crossorigin><script id="yun-config">
+    window.Yun = {}
+    window.CONFIG = {"hostname":"example.com","root":"/","title":"踏着梦走过时光","version":"1.10.11","mode":"auto","copycode":true,"page":{"isPost":true},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}.","hits":"${hits} results found","hits_time":"${hits} results found in ${time} ms"},"anonymous_image":"https://cdn.yunyoujun.cn/img/avatar/none.jpg","say":{"api":"https://el-bot-api.vercel.app/api/words/young"},"fireworks":{"colors":null},"vendors":{"host":"https://fastly.jsdelivr.net/npm/","darken":"https://fastly.jsdelivr.net/npm/darken@1.5.0"}};
+  </script><link rel="stylesheet" href="/css/hexo-theme-yun.css"><script src="/js/hexo-theme-yun.js" type="module"></script><meta name="description" content="参考奇安信攻防社区 0x00 常用工具、资源简记：   工具、网站 备注    爱站、站长工具 Whois、备案号、权重、公司名称等   天眼查、企查查、搜狗搜索引擎 公司注册域名、微信公众号、APP、软件著作权等   ZoomEye、Shodan、FOFA、0.Zone、quake 网络空间资产搜索引擎   ENScanGo、ICP备案 主域名收集   OneForAll、Layer、Rapid">
+<meta property="og:type" content="article">
+<meta property="og:title" content="外网信息收集">
+<meta property="og:url" content="http://example.com/2025/02/17/%E5%A4%96%E7%BD%91%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="参考奇安信攻防社区 0x00 常用工具、资源简记：   工具、网站 备注    爱站、站长工具 Whois、备案号、权重、公司名称等   天眼查、企查查、搜狗搜索引擎 公司注册域名、微信公众号、APP、软件著作权等   ZoomEye、Shodan、FOFA、0.Zone、quake 网络空间资产搜索引擎   ENScanGo、ICP备案 主域名收集   OneForAll、Layer、Rapid">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-02-17T14:44:14.000Z">
+<meta property="article:modified_time" content="2025-02-17T15:30:53.203Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="信息收集">
+<meta name="twitter:card" content="summary"><script>(function() {
+  if (CONFIG.mode !== 'auto') return
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+  const setting = localStorage.getItem('darken-mode') || 'auto'
+  if (setting === 'dark' || (prefersDark && setting !== 'light'))
+    document.documentElement.classList.toggle('dark', true)
+})()</script></head><body><script src="https://code.iconify.design/2/2.1.1/iconify.min.js"></script><script>// Define global variable
+IconifyProviders = {
+  // Empty prefix: overwrite default API provider configuration
+  '': {
+    // Use custom API first, use Iconify public API as backup
+    resources: [
+        'https://api.iconify.design',
+    ],
+    // Wait for 1 second before switching API hosts
+    rotate: 1000,
+  },
+};</script><script defer src="https://fastly.jsdelivr.net/npm/animejs@latest"></script><script defer src="/js/ui/fireworks.js" type="module"></script><canvas class="fireworks"></canvas><div class="container"><a class="sidebar-toggle hty-icon-button" id="menu-btn"><div class="hamburger hamburger--spin" type="button"><span class="hamburger-box"><span class="hamburger-inner"></span></span></div></a><div class="sidebar-toggle sidebar-overlay"></div><aside class="sidebar"><script src="/js/sidebar.js" type="module"></script><ul class="sidebar-nav"><li class="sidebar-nav-item sidebar-nav-toc hty-icon-button sidebar-nav-active" data-target="post-toc-wrap" title="Table of Contents"><span class="icon iconify" data-icon="ri:list-ordered"></span></li><li class="sidebar-nav-item sidebar-nav-overview hty-icon-button" data-target="site-overview-wrap" title="Overview"><span class="icon iconify" data-icon="ri:passport-line"></span></li></ul><div class="sidebar-panel" id="site-overview-wrap"><div class="site-info fix-top"><a class="site-author-avatar" href="/about/" title="John Doe"><img width="96" loading="lazy" src="/images/20220918203822_79b0d.png" alt="John Doe"></a><div class="site-author-name"><a href="/about/">John Doe</a></div><span class="site-name">Hexo</span><sub class="site-subtitle"></sub><div class="site-description"></div></div><nav class="site-state"><a class="site-state-item hty-icon-button icon-home" href="/" title="Home"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:home-4-line"></span></span></a><div class="site-state-item"><a href="/archives/" title="Archives"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:archive-line"></span></span><span class="site-state-item-count">13</span></a></div><div class="site-state-item"><a href="/categories/" title="Categories"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:folder-2-line"></span></span><span class="site-state-item-count">0</span></a></div><div class="site-state-item"><a href="/tags/" title="Tags"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:price-tag-3-line"></span></span><span class="site-state-item-count">5</span></a></div><a class="site-state-item hty-icon-button" target="_blank" rel="noopener" href="https://yun.yunyoujun.cn" title="文档"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:settings-line"></span></span></a></nav><hr style="margin-bottom:0.5rem"><hr style="margin:0.5rem 1rem"><div class="links"><a class="links-item hty-icon-button" href="/links/" title="我的小伙伴们" style="color:dodgerblue"><span class="icon iconify" data-icon="ri:genderless-line"></span></a></div><br><a class="links-item hty-icon-button" id="toggle-mode-btn" href="javascript:;" title="Mode" style="color: #f1cb64"><span class="icon iconify" data-icon="ri:contrast-2-line"></span></a></div><div class="sidebar-panel sidebar-panel-active" id="post-toc-wrap"><div class="post-toc"><div class="post-toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#0x00-%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7%E3%80%81%E8%B5%84%E6%BA%90%E7%AE%80%E8%AE%B0%EF%BC%9A"><span class="toc-number">1.</span> <span class="toc-text">0x00 常用工具、资源简记：</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%94%B6%E9%9B%86%E4%B8%BB%E5%9F%9F%E5%90%8D%E4%BF%A1%E6%81%AF"><span class="toc-number"></span> <span class="toc-text">收集主域名信息</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-ICP%E5%A4%87%E6%A1%88"><span class="toc-number">1.</span> <span class="toc-text">1.ICP备案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%AC%E5%AE%89%E9%83%A8%E5%A4%87%E6%A1%88%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.1.</span> <span class="toc-text">公安部备案查询</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC%E4%B8%89%E6%96%B9%E7%AB%99%E7%82%B9"><span class="toc-number">1.2.</span> <span class="toc-text">第三方站点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9C%AA%E5%A4%87%E6%A1%88%E5%9F%9F%E5%90%8D%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.3.</span> <span class="toc-text">未备案域名查询</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-whois"><span class="toc-number">2.</span> <span class="toc-text">2.whois</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-IP%E5%8F%8D%E6%9F%A5"><span class="toc-number">2.1.</span> <span class="toc-text">3. IP反查</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E6%9F%A5%E8%AF%A2"><span class="toc-number">2.1.1.</span> <span class="toc-text">如何查询</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%9C%8B%E4%B8%8D%E5%AE%8C%E5%A4%AA%E9%95%BF%E4%BA%86"><span class="toc-number"></span> <span class="toc-text">看不完太长了</span></a></div></div></div></aside><main class="sidebar-translate" id="content"><div id="post"><article class="hty-card post-block" itemscope itemtype="https://schema.org/Article" style="--smc-primary:#0078E7;"><link itemprop="mainEntityOfPage" href="http://example.com/2025/02/17/%E5%A4%96%E7%BD%91%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86/"><span hidden itemprop="author" itemscope itemtype="https://schema.org/Person"><meta itemprop="name" content="John Doe"><meta itemprop="description"></span><span hidden itemprop="publisher" itemscope itemtype="https://schema.org/Organization"><meta itemprop="name" content="Hexo"></span><header class="post-header"><h1 class="post-title" itemprop="name headline">外网信息收集</h1><div class="post-meta"><div class="post-time"><span class="post-meta-item-icon"><span class="icon iconify" data-icon="ri:calendar-line"></span></span> <time title="Created: 2025-02-17 22:44:14" itemprop="dateCreated datePublished" datetime="2025-02-17T22:44:14+08:00">2025-02-17</time></div><div class="post-classify"><span class="post-tag"><a class="tag-item" href="/tags/%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86/" style="--text-color:var(--hty-text-color)"><span class="post-meta-item-icon"><span class="icon iconify" data-icon="ri:price-tag-3-line"></span></span><span class="tag-name">信息收集</span></a></span></div></div></header><section class="post-body" itemprop="articleBody"><div class="post-content markdown-body"><p><strong>参考奇安信攻防社区</strong></p>
+<h2 id="0x00-常用工具、资源简记："><a href="#0x00-常用工具、资源简记：" class="headerlink" title="0x00 常用工具、资源简记："></a>0x00 常用工具、资源简记：</h2><table>
+<thead>
+<tr>
+<th align="left">工具、网站</th>
+<th align="left">备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><a target="_blank" rel="noopener" href="https://www.aizhan.com/">爱站</a>、<a target="_blank" rel="noopener" href="https://tool.chinaz.com/">站长工具</a></td>
+<td align="left">Whois、备案号、权重、公司名称等</td>
+</tr>
+<tr>
+<td align="left"><a target="_blank" rel="noopener" href="https://www.tianyancha.com/">天眼查</a>、<a target="_blank" rel="noopener" href="https://www.qichacha.com/">企查查</a>、<a target="_blank" rel="noopener" href="https://wx.sogou.com/">搜狗搜索引擎</a></td>
+<td align="left">公司注册域名、微信公众号、APP、软件著作权等</td>
+</tr>
+<tr>
+<td align="left"><a target="_blank" rel="noopener" href="https://www.zoomeye.org/">ZoomEye</a>、<a target="_blank" rel="noopener" href="https://shodan.io/">Shodan</a>、<a target="_blank" rel="noopener" href="https://fofa.so/">FOFA</a>、<a target="_blank" rel="noopener" href="https://0.zone/">0.Zone</a>、<a target="_blank" rel="noopener" href="https://quake.360.cn/quake/#/index">quake</a></td>
+<td align="left">网络空间资产搜索引擎</td>
+</tr>
+<tr>
+<td align="left"><a target="_blank" rel="noopener" href="https://github.com/wgpsec/ENScan_GO">ENScanGo</a>、<a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">ICP备案</a></td>
+<td align="left">主域名收集</td>
+</tr>
+<tr>
+<td align="left"><a target="_blank" rel="noopener" href="https://github.com/shmilylty/OneForAll">OneForAll</a>、<a target="_blank" rel="noopener" href="https://github.com/euphrat1ca/LayerDomainFinder">Layer</a>、<a target="_blank" rel="noopener" href="https://opendata.rapid7.com/">Rapid7的开源数据项目</a>、<a target="_blank" rel="noopener" href="https://github.com/UnaPibaGeek/ctfr">ctfr</a>、<a target="_blank" rel="noopener" href="https://github.com/FortyNorthSecurity/EyeWitness">EyeWitness</a></td>
+<td align="left">子域名收集</td>
+</tr>
+<tr>
+<td align="left"><a target="_blank" rel="noopener" href="https://github.com/lcvvvv/kscan">Kscan</a>、<a target="_blank" rel="noopener" href="https://github.com/0x727/ShuiZe_0x727">ShuiZe_0x727</a>、<a target="_blank" rel="noopener" href="https://github.com/TophantTechnology/ARL">ARL灯塔</a>、<a target="_blank" rel="noopener" href="https://gobies.org/">Goby</a></td>
+<td align="left">自动化、批量信息收集</td>
+</tr>
+<tr>
+<td align="left"><a target="_blank" rel="noopener" href="https://github.com/dr0op/bufferfly">Bufferfly</a>、<a target="_blank" rel="noopener" href="https://github.com/EdgeSecurityTeam/EHole">Ehole</a></td>
+<td align="left">资产处理、信息筛选</td>
+</tr>
+<tr>
+<td align="left"><a target="_blank" rel="noopener" href="https://dnsdb.io/zh-cn/">dnsdb</a>、<a target="_blank" rel="noopener" href="https://github.com/christophetd/CloudFlair">CloudFlair</a></td>
+<td align="left">CDN相关</td>
+</tr>
+<tr>
+<td align="left"><a target="_blank" rel="noopener" href="https://www.virustotal.com/">VirusTotal</a>、<a target="_blank" rel="noopener" href="https://x.threatbook.cn/">微步</a>、<a target="_blank" rel="noopener" href="https://github.com/Sma11New/ip2domain">ip2domain</a></td>
+<td align="left">C段、域名&#x2F;ip情报信息</td>
+</tr>
+<tr>
+<td align="left"><a target="_blank" rel="noopener" href="https://nmap.org/">Nmap</a>、<a target="_blank" rel="noopener" href="https://github.com/robertdavidgraham/masscan">Masscan</a></td>
+<td align="left">端口服务信息</td>
+</tr>
+<tr>
+<td align="left">Google Hacking、<a target="_blank" rel="noopener" href="https://github.com/maurosoria/dirsearch">dirsearch</a>、<a target="_blank" rel="noopener" href="https://github.com/pingc0y/URLFinder">URLFinder</a></td>
+<td align="left">WEB站点信息、api接口等</td>
+</tr>
+<tr>
+<td align="left"><a target="_blank" rel="noopener" href="https://github.com/EnableSecurity/wafw00f">wafw00f</a></td>
+<td align="left">waf识别</td>
+</tr>
+<tr>
+<td align="left"><a target="_blank" rel="noopener" href="http://www.yunsee.cn/">云悉</a>、<a target="_blank" rel="noopener" href="http://finger.tidesec.net/home/index/index.html">潮汐</a>、<a target="_blank" rel="noopener" href="https://www.whatweb.net/">WhatWeb</a></td>
+<td align="left">在线CMS识别</td>
+</tr>
+<tr>
+<td align="left"><a target="_blank" rel="noopener" href="https://www.qimai.cn/">七麦</a>、<a target="_blank" rel="noopener" href="https://www.xiaolanben.com/pc">小蓝本</a></td>
+<td align="left">APP资产</td>
+</tr>
+<tr>
+<td align="left"><a target="_blank" rel="noopener" href="https://github.com/TheKingOfDuck/ApkAnalyser">ApkAnalyser</a></td>
+<td align="left">App敏感信息</td>
+</tr>
+<tr>
+<td align="left"><a target="_blank" rel="noopener" href="https://wy.zone.ci/">乌云漏洞库</a>、<a target="_blank" rel="noopener" href="http://www.cnnvd.org.cn/">CNVD</a>、<a target="_blank" rel="noopener" href="https://github.com/tomnomnom/waybackurls"><strong>waybackurls</strong></a></td>
+<td align="left">历史漏洞、历史资产等</td>
+</tr>
+<tr>
+<td align="left"><a target="_blank" rel="noopener" href="https://github.com/n0tr00t/Sreg">n0tr00t&#x2F;Sreg</a>、reg007</td>
+<td align="left">个人隐私信息</td>
+</tr>
+<tr>
+<td align="left"><a target="_blank" rel="noopener" href="https://github.com/obheda12/GitDorker">GitDorker</a></td>
+<td align="left">资产信息、源码泄露</td>
+</tr>
+<tr>
+<td align="left"><a target="_blank" rel="noopener" href="https://github.com/laramies/theHarvester">theHarvester</a>、<a target="_blank" rel="noopener" href="https://app.snov.io/">Snov.io</a></td>
+<td align="left">邮箱信息收集</td>
+</tr>
+<tr>
+<td align="left"><a target="_blank" rel="noopener" href="https://start.me/p/GE7JQb/osint">OSINT开源情报和侦擦工具</a></td>
+<td align="left">开源情报资源导航</td>
+</tr>
+<tr>
+<td align="left"><a target="_blank" rel="noopener" href="https://github.com/cnrstar/anti-honeypot">anti-honeypot</a>、<a target="_blank" rel="noopener" href="https://send-safe-honeypot-hunter.apponic.com/">Honeypot Hunter</a></td>
+<td align="left">蜜罐识别</td>
+</tr>
+</tbody></table>
+<h1 id="收集主域名信息"><a href="#收集主域名信息" class="headerlink" title="收集主域名信息"></a>收集主域名信息</h1><p><strong>作用：可通过域名信息获取：主域名、存活站点、关联信息、钓鱼信息。为漏洞挖掘提供数据支撑。</strong></p>
+<h2 id="1-ICP备案"><a href="#1-ICP备案" class="headerlink" title="1.ICP备案"></a>1.ICP备案</h2><p><em>国内服务器线上运营都必须先办理ICP备案后才能上线。</em></p>
+<p>查询网站：<a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">https://beian.miit.gov.cn/#/Integrated/index</a></p>
+<h3 id="公安部备案查询"><a href="#公安部备案查询" class="headerlink" title="公安部备案查询"></a>公安部备案查询</h3><h3 id="第三方站点"><a href="#第三方站点" class="headerlink" title="第三方站点"></a>第三方站点</h3><ul>
+<li>ICP备案查询-站长工具</li>
+<li>SEO综合查询</li>
+</ul>
+<h3 id="未备案域名查询"><a href="#未备案域名查询" class="headerlink" title="未备案域名查询"></a>未备案域名查询</h3><ul>
+<li>已知网站信息获取（如，网站站点导航可能会包含未备案的站点）</li>
+<li>网络空间引擎进行证书、图标关联搜索。例如：fofa指定搜索规则 <code>is_domain=true</code>，即表示只返回域名*(个人感觉国外shodan、国内fofa)*。</li>
+</ul>
+<h2 id="2-whois"><a href="#2-whois" class="headerlink" title="2.whois"></a>2.whois</h2><p>通过whois信息可以获取注册人的关键信息。如注册商、联系人、联系邮箱、联系电话，也可以对注册人、邮箱、电话反查域名，也可以通过搜索引擎进一步挖掘域名所有人的信息。深入可社工、可漏洞挖掘利用。</p>
+<ul>
+<li><p>站长之家</p>
+<p><a target="_blank" rel="noopener" href="http://whois.chinaz.com/">http://whois.chinaz.com</a></p>
+</li>
+<li><p>Bugscanner</p>
+<p><a target="_blank" rel="noopener" href="http://whois.bugscaner.com/">http://whois.bugscaner.com</a></p>
+</li>
+<li><p>国外BGP</p>
+<p><a target="_blank" rel="noopener" href="https://bgp.he.net/">https://bgp.he.net</a></p>
+</li>
+<li><p>who.is</p>
+<p><a target="_blank" rel="noopener" href="https://who.is/">https://who.is/</a></p>
+</li>
+<li><p>IP138网站</p>
+<p><a target="_blank" rel="noopener" href="https://site.ip138.com/">https://site.ip138.com/</a></p>
+</li>
+<li><p>域名信息查询-腾讯云</p>
+<p><a target="_blank" rel="noopener" href="https://whois.cloud.tencent.com/">https://whois.cloud.tencent.com/</a></p>
+</li>
+<li><p>ICANN LOOKUP</p>
+<p><a target="_blank" rel="noopener" href="https://lookup.icann.org/">https://lookup.icann.org/</a></p>
+</li>
+<li><p>狗狗查询</p>
+<p><a target="_blank" rel="noopener" href="https://www.ggcx.com/main/integrated">https://www.ggcx.com/main/integrated</a></p>
+</li>
+</ul>
+<h3 id="3-IP反查"><a href="#3-IP反查" class="headerlink" title="3. IP反查"></a>3. IP反查</h3><blockquote>
+<p>ps:</p>
+<ul>
+<li>目标可能存在多个域名绑定于同一ip上，通过ip反查可以获取到其他域名信息。比如旁站。<ul>
+<li><em>通过获取目标真实IP后，进行反查的旁站更真实。</em></li>
+</ul>
+</li>
+<li>查询站点需复杂性，单一的站点会有反查不出信息的可能。<ul>
+<li><em>大型企业不同的站点收录可能不一样</em></li>
+<li><em>个人推荐3个不同站点反查</em></li>
+</ul>
+</li>
+</ul>
+</blockquote>
+<h4 id="如何查询"><a href="#如何查询" class="headerlink" title="如何查询"></a>如何查询</h4><p><strong>在线查询网站</strong>：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="http://s.tool.chinaz.com/same">同IP网站查询，同服务器网站查询 - 站长工具</a></li>
+<li><a target="_blank" rel="noopener" href="https://dnslytics.com/">Dnslytics</a></li>
+<li><a target="_blank" rel="noopener" href="https://site.ip138.com/">iP或域名查询</a></li>
+</ul>
+<p><strong>搜索引擎</strong>：</p>
+<ul>
+<li>shodan</li>
+<li>bing</li>
+<li>fofa</li>
+</ul>
+<h1 id="看不完太长了"><a href="#看不完太长了" class="headerlink" title="看不完太长了"></a>看不完太长了</h1></div></section><div id="reward-container"><span class="hty-icon-button button-glow" id="reward-button" title="Donate" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === &quot;none&quot;) ? &quot;block&quot; : &quot;none&quot;;"><span class="icon iconify" data-icon="ri:hand-coin-line"></span></span><div id="reward-comment">I'm so cute. Please give me money.</div></div><ul class="post-copyright"><li class="post-copyright-author"><strong>Post author: </strong>John Doe</li><li class="post-copyright-link"><strong>Post link: </strong><a href="http://example.com/2025/02/17/%E5%A4%96%E7%BD%91%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86/" title="外网信息收集">http://example.com/2025/02/17/%E5%A4%96%E7%BD%91%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86/</a></li><li class="post-copyright-license"><strong>Copyright Notice: </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="noopener" title="CC BY-NC-SA 4.0 "><span class="icon iconify" data-icon="ri:creative-commons-line"></span><span class="icon iconify" data-icon="ri:creative-commons-by-line"></span><span class="icon iconify" data-icon="ri:creative-commons-nc-line"></span><span class="icon iconify" data-icon="ri:creative-commons-sa-line"></span></a> unless otherwise stated.</li></ul></article><div class="post-nav"><div class="post-nav-item"></div><div class="post-nav-item"><a class="post-nav-next" href="/2025/01/21/%E7%AC%9B%E5%8D%A1%E5%B0%94%E7%A7%AF%E5%BB%B6%E6%97%B6%E6%B3%A8%E5%85%A5/" rel="next" title="笛卡尔积延时注入"><span class="post-nav-text">笛卡尔积延时注入</span><span class="icon iconify" data-icon="ri:arrow-right-s-line"></span></a></div></div></div><div class="hty-card" id="comment"></div></main><footer class="sidebar-translate" id="footer"><div class="copyright"><span>&copy; 2019 – 2025 </span><span class="with-love" id="animate"><span class="icon iconify" data-icon="ri:cloud-line"></span></span><span class="author"> John Doe</span></div><div class="powered"><span>Powered by <a href="https://hexo.io" target="_blank" rel="noopener">Hexo</a> v7.3.0</span><span class="footer-separator">|</span><span>Theme - <a rel="noopener" href="https://github.com/YunYouJun/hexo-theme-yun" target="_blank"><span>Yun</span></a> v1.10.11</span></div></footer></div><a class="hty-icon-button" id="back-to-top" aria-label="back-to-top" href="#"><span class="icon iconify" data-icon="ri:arrow-up-s-line"></span><svg class="progress-circle-container" viewBox="0 0 100 100"><circle class="progress-circle" id="progressCircle" cx="50" cy="50" r="48" fill="none" stroke="#0078E7" stroke-width="2" stroke-linecap="round"></circle></svg></a></body></html>
