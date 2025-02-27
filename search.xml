@@ -1,38 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>less18-22</title>
-    <url>/2024/11/24/less18-22/</url>
-    <content><![CDATA[<h1 id="less18"><a href="#less18" class="headerlink" title="less18"></a>less18</h1><p>如果输入正确的账号密码，则页面回显你的ip与user-agent</p>
-<p><img src="/../images/1732457032265.png" alt="1732457032265" loading="lazy"></p>
-<p>如果错误登录则只会回显ip，显然不能进行之前的注入。</p>
-<p>我们查看源码（这里是一部分）</p>
-<p><img src="/../images/1732419575415.jpg" alt="1732419575415" loading="lazy"></p>
-<p>发现密码和账户都被17关的过滤给保护起来了。因此显然难以通过账户密码进行注入，但我们可以发现在查询成功处有给insert操作将uagent，与ip和uname插入括号里的三个字段中，我们便能想到通过修改uagent的值进行注入。</p>
-<p>要修改这个值我们需使用burp suite来进行抓包。</p>
-<p>并且修改user-agent的值。</p>
-<p><img src="/../images/1733489271913.jpg" alt="1733489271913" loading="lazy"></p>
-<p>这里的payload是<code>1&#39;,&#39;2&#39;,(select 1 from (select concat((floor(rand(0)*2 )),database()) as a,count(*) from information_schema.tables group by a)as t))#</code></p>
-<p>我们也可以用extractvalue,updatexml等函数的报错注入来简化payload。</p>
-<h1 id="less19"><a href="#less19" class="headerlink" title="less19"></a>less19</h1><p>看关卡标题我们就可以知道这关和上关类似，不过这次我们需要修改的是Referer请求头，Referer指的是发起请求的上一页面也就是要从哪跳转到下一页面。</p>
-<p>我们构造的payload和上一关类似</p>
-<p><code>1&#39;,extractvalue(1,concat(0x7e,(select database()))))#</code></p>
-<p>因为源码中insert语句的变量少了。</p>
-<p><img src="/../images/1735725090372.jpg" alt="1735725090372" loading="lazy"></p>
-<p>注入成功。</p>
-<h1 id="less20-cookie"><a href="#less20-cookie" class="headerlink" title="less20(cookie)"></a>less20(cookie)</h1><p>首先尝试直接在username和password注入，无果，我们可以首先使用合法的账户登录，再由标题可知我们可以从cookie下手，既然页面能显示我的cookie，那么他一定在后台获取了我的cookie，又显示了我的账户密码，我们便可以猜测是通过检验cookie中的uname的值来显示不同的账号密码，我们查看源码。</p>
-<p><img src="/../images/1736838783987.jpg" alt="1736838783987" loading="lazy"></p>
-<p>我们便能知道注入点就是那个SQL语句。我们只要修改cookie的值便能进行注入。例如</p>
-<p><img src="/../images/1736839137733.jpg" alt="1736839137733" loading="lazy"></p>
-<p>我们便可以得到想要的值。</p>
-<h1 id="less21-cookie"><a href="#less21-cookie" class="headerlink" title="less21(cookie)"></a>less21(cookie)</h1><p>同上，不过是括号加单引号闭合，且是base64编码。</p>
-<h1 id="less22-cookie"><a href="#less22-cookie" class="headerlink" title="less22(cookie)"></a>less22(cookie)</h1><p>同20，但是双引号</p>
-]]></content>
-      <tags>
-        <tag>sqlilab注入 web</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>DVWA</title>
     <url>/2025/02/24/DVWA/</url>
     <content><![CDATA[<h1 id="Brute-Force-暴力"><a href="#Brute-Force-暴力" class="headerlink" title="Brute Force(暴力)"></a>Brute Force(暴力)</h1><h2 id="low"><a href="#low" class="headerlink" title="low"></a>low</h2><p>虽然题目叫暴力破解，但是这里还可以用sql注入。</p>
@@ -225,42 +193,6 @@
       </tags>
   </entry>
   <entry>
-    <title>less23-27</title>
-    <url>/2025/01/14/less23-27/</url>
-    <content><![CDATA[<h1 id="less23"><a href="#less23" class="headerlink" title="less23"></a>less23</h1><p>尝试之前的get题的方法发现总是有语法错误，而且报错内容中多出一个引号，我们可以推断我们注释符号没有起作用，查看源码。</p>
-<p><img src="/../images/1736866487923.jpg" alt="1736866487923" loading="lazy"></p>
-<p>果然给干没了，既然不能注释掉多余的引号那么我们可以想到使用多个or来中和掉多出来的一个引号payload如下:</p>
-<p><code> ?id=2&#39;  or extractvalue(1,concat(0x7e,(select database()),0x7e)) or &#39;1&#39;=&#39;1</code></p>
-<p>成功。</p>
-<p><img src="/../images/1736866811069.jpg" alt="1736866811069" loading="lazy"></p>
-<h1 id="less24"><a href="#less24" class="headerlink" title="less24"></a>less24</h1><p>首先查找注入点</p>
-<p><img src="/../images/1738307969207.jpg" alt="1738307969207" loading="lazy"></p>
-<p>发现在登录和注册都有过滤，我们试着登录看看</p>
-<p><img src="/../images/1738308060203.jpg" alt="1738308060203" loading="lazy"></p>
-<p>发现能改密码，但也过滤了，无思路，我们看看源码。发现这里是用session获取的用户名且并没过滤，这就是注入点</p>
-<p><img src="/../images/1738308271201(1).jpg" alt="1738308271201(1)" loading="lazy"></p>
-<p><img src="/../images/1738308636055.jpg" alt="1738308636055" loading="lazy"></p>
-<p>这里的原理是注册一个危险字段的用户，由于通过session获取的时候没过滤，那么储存在session中的危险字段便能利用（这里注册时的转义只是暂时的）。</p>
-<p>我们讲用户名注册成例如这样</p>
-<p><code>admin&#39;#</code></p>
-<p>此时sql语句变成这样</p>
-<p><code>&quot;UPDATE users SET PASSWORD=&#39;$pass&#39; where username=&#39;admin&#39;#&#39; and password=&#39;$curr_pass&#39; &quot;</code></p>
-<p>那么#后面的语句便被注释了，也就是说我们不需要知道当下的密码便可以修改admin的密码。</p>
-<h1 id="less25-less25a"><a href="#less25-less25a" class="headerlink" title="less25&amp;less25a"></a>less25&amp;less25a</h1><p>由提示可知，”AND”和”OR”被过滤了，那么我们可以使用双写绕过。</p>
-<p><strong>双写绕过：</strong></p>
-<p>即讲“or”写成“OorR”，这样中间的“or”会被过滤掉，而“OR”则被留下，值得注意的是，如果在payload中的其他单词中也有“or”或者“and”的部分，则也要双写以防被过滤。</p>
-<p>less25a则是数字型注入，其余和less25差不多。</p>
-<h1 id="less26-less26a"><a href="#less26-less26a" class="headerlink" title="less26&amp;less26a"></a>less26&amp;less26a</h1><p>在这一关，除了or 和and被过滤，还有注释符和空格也被过滤了，那么我们可以利用其他的字符代替使用<strong>“%a0”</strong> 或<strong>“%0b”</strong> 替代空格，使用<strong>“||”</strong> 替代 “or”，使用<strong>“%26%26”</strong> 替代 “and”。</p>
-<p>26a不回显报错信息，所以我们只能让信息爆在显示位上。</p>
-<h1 id="less27-less27a"><a href="#less27-less27a" class="headerlink" title="less27&amp;less27a"></a>less27&amp;less27a</h1><p>or和and没被过滤，不过空格和注释符还有select和union被过滤了。我们可以用<strong>大小写过滤</strong>，即将大小写混杂，也可以使用报错注入来回显信息。</p>
-<p>27a报错无回显，那么就用大小写过滤。</p>
-<p>我们发现有些过滤语句后面的反斜杠上有m或s，这是什么意思呢，这是设定的修正符，修正符的具体效果参照下面这个链接：<br><a href="https://www.php.net/manual/zh/reference.pcre.pattern.modifiers.php#reference.pcre.pattern.modifiers">正则表达式中的修正符</a></p>
-]]></content>
-      <tags>
-        <tag>sqlilab注入 web</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>less28-less37</title>
     <url>/2025/02/18/less28-less37/</url>
     <content><![CDATA[<h1 id="less28"><a href="#less28" class="headerlink" title="less28"></a>less28</h1><p>本关除了过滤注释符和空格，还将连续的<strong>union select</strong>给过滤了，我们可以使用双写绕过。</p>
@@ -321,6 +253,53 @@
       </tags>
   </entry>
   <entry>
+    <title>less38-41</title>
+    <url>/2025/02/18/less38-41/</url>
+    <content><![CDATA[<p><strong>Less 38 ~ 41 虽然使用 Less 1 的方式注入即可注入成功，但是这 4 关存在堆叠注入漏洞。我们可以使用 “;” 闭合第一个 SQL 语句，然后在后面执行任意的 SQL 语句，通过这个漏洞我们可以对数据库执行任意的操作。</strong></p>
+<h1 id="less38"><a href="#less38" class="headerlink" title="less38"></a>less38</h1><h2 id="堆叠注入"><a href="#堆叠注入" class="headerlink" title="堆叠注入"></a>堆叠注入</h2><p>此处使用 Less 1 的 payload 就可以完成注入，此处用于测试堆叠注入。所谓<strong>堆叠注入</strong>就是在原语句后加上分号，从而闭合前面的内容作为第一条 SQL 语句。然后在后面输入第二条的数据库操作语句，在条件允许可以被后端带入数据库执行。堆叠注入使用的范围非常有限，例如后端可能会限制 SQL 只执行一条语句。一旦这种漏洞存在，对数据库的破坏性是毁灭性的，因为这表示攻击者可以肆意对数据库进行操作。</p>
+<p>堆叠注入攻击<br>堆叠查询注入攻击可以执行多条语句，多语句之间以分号隔开。堆叠查询注入就是利用这个特点，在第二个SQL语句中构造自己的要执行的语句<br>新建一个表<code>select * from users;create table A like users;</code><br>删除创建的A表<code>select * from users;drop table test;</code><br>查询数据<code>select * from users;select B,C,D;</code><br>加载文件<code>select * from users;select load_file(&#39;/etc/passwd&#39;);</code><br>增加一条数据<code>select * from users;insert into users values(18,&#39;zhong&#39;,&#39;zhong&#39;);</code></p>
+<p>查看源码发现源码使用了 <strong>mysqli_multi_query()</strong> 函数，该函数可以执行多个 MySQL 语句。之前的 Less 使用的是 <strong>mysql_query() 函数</strong>，该函数只执行一条 MySQL 查询。</p>
+<h1 id="less39"><a href="#less39" class="headerlink" title="less39"></a>less39</h1><p>和less38一样，不过是数值型注入。</p>
+<h1 id="less40"><a href="#less40" class="headerlink" title="less40"></a>less40</h1><p>也是堆叠注入不过是单引号和括号型。</p>
+<h1 id="less41"><a href="#less41" class="headerlink" title="less41"></a>less41</h1><p>和39差不多也是堆叠注入的数值型。</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>less18-22</title>
+    <url>/2024/11/24/less18-22/</url>
+    <content><![CDATA[<h1 id="less18"><a href="#less18" class="headerlink" title="less18"></a>less18</h1><p>如果输入正确的账号密码，则页面回显你的ip与user-agent</p>
+<p><img src="/../images/1732457032265.png" alt="1732457032265" loading="lazy"></p>
+<p>如果错误登录则只会回显ip，显然不能进行之前的注入。</p>
+<p>我们查看源码（这里是一部分）</p>
+<p><img src="/../images/1732419575415.jpg" alt="1732419575415" loading="lazy"></p>
+<p>发现密码和账户都被17关的过滤给保护起来了。因此显然难以通过账户密码进行注入，但我们可以发现在查询成功处有给insert操作将uagent，与ip和uname插入括号里的三个字段中，我们便能想到通过修改uagent的值进行注入。</p>
+<p>要修改这个值我们需使用burp suite来进行抓包。</p>
+<p>并且修改user-agent的值。</p>
+<p><img src="/../images/1733489271913.jpg" alt="1733489271913" loading="lazy"></p>
+<p>这里的payload是<code>1&#39;,&#39;2&#39;,(select 1 from (select concat((floor(rand(0)*2 )),database()) as a,count(*) from information_schema.tables group by a)as t))#</code></p>
+<p>我们也可以用extractvalue,updatexml等函数的报错注入来简化payload。</p>
+<h1 id="less19"><a href="#less19" class="headerlink" title="less19"></a>less19</h1><p>看关卡标题我们就可以知道这关和上关类似，不过这次我们需要修改的是Referer请求头，Referer指的是发起请求的上一页面也就是要从哪跳转到下一页面。</p>
+<p>我们构造的payload和上一关类似</p>
+<p><code>1&#39;,extractvalue(1,concat(0x7e,(select database()))))#</code></p>
+<p>因为源码中insert语句的变量少了。</p>
+<p><img src="/../images/1735725090372.jpg" alt="1735725090372" loading="lazy"></p>
+<p>注入成功。</p>
+<h1 id="less20-cookie"><a href="#less20-cookie" class="headerlink" title="less20(cookie)"></a>less20(cookie)</h1><p>首先尝试直接在username和password注入，无果，我们可以首先使用合法的账户登录，再由标题可知我们可以从cookie下手，既然页面能显示我的cookie，那么他一定在后台获取了我的cookie，又显示了我的账户密码，我们便可以猜测是通过检验cookie中的uname的值来显示不同的账号密码，我们查看源码。</p>
+<p><img src="/../images/1736838783987.jpg" alt="1736838783987" loading="lazy"></p>
+<p>我们便能知道注入点就是那个SQL语句。我们只要修改cookie的值便能进行注入。例如</p>
+<p><img src="/../images/1736839137733.jpg" alt="1736839137733" loading="lazy"></p>
+<p>我们便可以得到想要的值。</p>
+<h1 id="less21-cookie"><a href="#less21-cookie" class="headerlink" title="less21(cookie)"></a>less21(cookie)</h1><p>同上，不过是括号加单引号闭合，且是base64编码。</p>
+<h1 id="less22-cookie"><a href="#less22-cookie" class="headerlink" title="less22(cookie)"></a>less22(cookie)</h1><p>同20，但是双引号</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Hello World</title>
     <url>/2024/08/04/hello-world/</url>
     <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
@@ -339,21 +318,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>less38-41</title>
-    <url>/2025/02/18/less38-41/</url>
-    <content><![CDATA[<p><strong>Less 38 ~ 41 虽然使用 Less 1 的方式注入即可注入成功，但是这 4 关存在堆叠注入漏洞。我们可以使用 “;” 闭合第一个 SQL 语句，然后在后面执行任意的 SQL 语句，通过这个漏洞我们可以对数据库执行任意的操作。</strong></p>
-<h1 id="less38"><a href="#less38" class="headerlink" title="less38"></a>less38</h1><h2 id="堆叠注入"><a href="#堆叠注入" class="headerlink" title="堆叠注入"></a>堆叠注入</h2><p>此处使用 Less 1 的 payload 就可以完成注入，此处用于测试堆叠注入。所谓<strong>堆叠注入</strong>就是在原语句后加上分号，从而闭合前面的内容作为第一条 SQL 语句。然后在后面输入第二条的数据库操作语句，在条件允许可以被后端带入数据库执行。堆叠注入使用的范围非常有限，例如后端可能会限制 SQL 只执行一条语句。一旦这种漏洞存在，对数据库的破坏性是毁灭性的，因为这表示攻击者可以肆意对数据库进行操作。</p>
-<p>堆叠注入攻击<br>堆叠查询注入攻击可以执行多条语句，多语句之间以分号隔开。堆叠查询注入就是利用这个特点，在第二个SQL语句中构造自己的要执行的语句<br>新建一个表<code>select * from users;create table A like users;</code><br>删除创建的A表<code>select * from users;drop table test;</code><br>查询数据<code>select * from users;select B,C,D;</code><br>加载文件<code>select * from users;select load_file(&#39;/etc/passwd&#39;);</code><br>增加一条数据<code>select * from users;insert into users values(18,&#39;zhong&#39;,&#39;zhong&#39;);</code></p>
-<p>查看源码发现源码使用了 <strong>mysqli_multi_query()</strong> 函数，该函数可以执行多个 MySQL 语句。之前的 Less 使用的是 <strong>mysql_query() 函数</strong>，该函数只执行一条 MySQL 查询。</p>
-<h1 id="less39"><a href="#less39" class="headerlink" title="less39"></a>less39</h1><p>和less38一样，不过是数值型注入。</p>
-<h1 id="less40"><a href="#less40" class="headerlink" title="less40"></a>less40</h1><p>也是堆叠注入不过是单引号和括号型。</p>
-<h1 id="less41"><a href="#less41" class="headerlink" title="less41"></a>less41</h1><p>和39差不多也是堆叠注入的数值型。</p>
-]]></content>
-      <tags>
-        <tag>sqlilab注入 web</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>less42-45</title>
     <url>/2025/02/19/less42-45/</url>
     <content><![CDATA[<p><strong>Less 42 ~ 45 是使用 POST 提交参数的登录界面，username 字段进行了参数过滤，但是 password 字段没有。此处可以在 password 字段使用万能密码直接夺取用户，也可以在该字段处使用堆叠注入。</strong></p>
@@ -363,6 +327,42 @@
 <h1 id="less43"><a href="#less43" class="headerlink" title="less43"></a>less43</h1><p>和less42一样，不过是单引号和括号闭合。</p>
 <h1 id="less44"><a href="#less44" class="headerlink" title="less44"></a>less44</h1><p>和less42一样</p>
 <h1 id="less45"><a href="#less45" class="headerlink" title="less45"></a>less45</h1><p>和less43一样</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>less23-27</title>
+    <url>/2025/01/14/less23-27/</url>
+    <content><![CDATA[<h1 id="less23"><a href="#less23" class="headerlink" title="less23"></a>less23</h1><p>尝试之前的get题的方法发现总是有语法错误，而且报错内容中多出一个引号，我们可以推断我们注释符号没有起作用，查看源码。</p>
+<p><img src="/../images/1736866487923.jpg" alt="1736866487923" loading="lazy"></p>
+<p>果然给干没了，既然不能注释掉多余的引号那么我们可以想到使用多个or来中和掉多出来的一个引号payload如下:</p>
+<p><code> ?id=2&#39;  or extractvalue(1,concat(0x7e,(select database()),0x7e)) or &#39;1&#39;=&#39;1</code></p>
+<p>成功。</p>
+<p><img src="/../images/1736866811069.jpg" alt="1736866811069" loading="lazy"></p>
+<h1 id="less24"><a href="#less24" class="headerlink" title="less24"></a>less24</h1><p>首先查找注入点</p>
+<p><img src="/../images/1738307969207.jpg" alt="1738307969207" loading="lazy"></p>
+<p>发现在登录和注册都有过滤，我们试着登录看看</p>
+<p><img src="/../images/1738308060203.jpg" alt="1738308060203" loading="lazy"></p>
+<p>发现能改密码，但也过滤了，无思路，我们看看源码。发现这里是用session获取的用户名且并没过滤，这就是注入点</p>
+<p><img src="/../images/1738308271201(1).jpg" alt="1738308271201(1)" loading="lazy"></p>
+<p><img src="/../images/1738308636055.jpg" alt="1738308636055" loading="lazy"></p>
+<p>这里的原理是注册一个危险字段的用户，由于通过session获取的时候没过滤，那么储存在session中的危险字段便能利用（这里注册时的转义只是暂时的）。</p>
+<p>我们讲用户名注册成例如这样</p>
+<p><code>admin&#39;#</code></p>
+<p>此时sql语句变成这样</p>
+<p><code>&quot;UPDATE users SET PASSWORD=&#39;$pass&#39; where username=&#39;admin&#39;#&#39; and password=&#39;$curr_pass&#39; &quot;</code></p>
+<p>那么#后面的语句便被注释了，也就是说我们不需要知道当下的密码便可以修改admin的密码。</p>
+<h1 id="less25-less25a"><a href="#less25-less25a" class="headerlink" title="less25&amp;less25a"></a>less25&amp;less25a</h1><p>由提示可知，”AND”和”OR”被过滤了，那么我们可以使用双写绕过。</p>
+<p><strong>双写绕过：</strong></p>
+<p>即讲“or”写成“OorR”，这样中间的“or”会被过滤掉，而“OR”则被留下，值得注意的是，如果在payload中的其他单词中也有“or”或者“and”的部分，则也要双写以防被过滤。</p>
+<p>less25a则是数字型注入，其余和less25差不多。</p>
+<h1 id="less26-less26a"><a href="#less26-less26a" class="headerlink" title="less26&amp;less26a"></a>less26&amp;less26a</h1><p>在这一关，除了or 和and被过滤，还有注释符和空格也被过滤了，那么我们可以利用其他的字符代替使用<strong>“%a0”</strong> 或<strong>“%0b”</strong> 替代空格，使用<strong>“||”</strong> 替代 “or”，使用<strong>“%26%26”</strong> 替代 “and”。</p>
+<p>26a不回显报错信息，所以我们只能让信息爆在显示位上。</p>
+<h1 id="less27-less27a"><a href="#less27-less27a" class="headerlink" title="less27&amp;less27a"></a>less27&amp;less27a</h1><p>or和and没被过滤，不过空格和注释符还有select和union被过滤了。我们可以用<strong>大小写过滤</strong>，即将大小写混杂，也可以使用报错注入来回显信息。</p>
+<p>27a报错无回显，那么就用大小写过滤。</p>
+<p>我们发现有些过滤语句后面的反斜杠上有m或s，这是什么意思呢，这是设定的修正符，修正符的具体效果参照下面这个链接：<br><a href="https://www.php.net/manual/zh/reference.pcre.pattern.modifiers.php#reference.pcre.pattern.modifiers">正则表达式中的修正符</a></p>
 ]]></content>
       <tags>
         <tag>sqlilab注入 web</tag>
@@ -528,6 +528,12 @@
       </tags>
   </entry>
   <entry>
+    <title>博客的创建</title>
+    <url>/2024/08/04/%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%88%9B%E5%BB%BA/</url>
+    <content><![CDATA[<p>搭建过程：<br>    先本地连接GitHub，再在GitHub里创建仓库，然后本地安装hexo，最后将hexo程序上传到GitHub。<br>遇到问题：<br>    1. 初始化hexo时弄错了文件夹<br>      解决：找到hexo程序所在文件夹使用git base初始化<br>    2：上传hexo时出现找不到github的邮箱和用户名的问题<br>      解决：网上寻找，在.deploy-git中的子文件.git找到config，并输入你的邮箱与用户名就可以解决<br>    &#x2F;&#x2F;之前出错的截图没了<br>    3：无法插入图片<br>      解决：b站（<a href="https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1%EF%BC%89">https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&amp;vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1）</a><br>      在source中创建images文件并将你需要的图片放入然后就可以在md文件中引用图片</p>
+]]></content>
+  </entry>
+  <entry>
     <title>upload11-21</title>
     <url>/2025/02/22/upload11-21/</url>
     <content><![CDATA[<h1 id="pass11-双写绕过"><a href="#pass11-双写绕过" class="headerlink" title="pass11(双写绕过)"></a>pass11(双写绕过)</h1><p>查看源码：</p>
@@ -638,12 +644,6 @@
       </tags>
   </entry>
   <entry>
-    <title>博客的创建</title>
-    <url>/2024/08/04/%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%88%9B%E5%BB%BA/</url>
-    <content><![CDATA[<p>搭建过程：<br>    先本地连接GitHub，再在GitHub里创建仓库，然后本地安装hexo，最后将hexo程序上传到GitHub。<br>遇到问题：<br>    1. 初始化hexo时弄错了文件夹<br>      解决：找到hexo程序所在文件夹使用git base初始化<br>    2：上传hexo时出现找不到github的邮箱和用户名的问题<br>      解决：网上寻找，在.deploy-git中的子文件.git找到config，并输入你的邮箱与用户名就可以解决<br>    &#x2F;&#x2F;之前出错的截图没了<br>    3：无法插入图片<br>      解决：b站（<a href="https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1%EF%BC%89">https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&amp;vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1）</a><br>      在source中创建images文件并将你需要的图片放入然后就可以在md文件中引用图片</p>
-]]></content>
-  </entry>
-  <entry>
     <title>外网信息收集</title>
     <url>/2025/02/17/%E5%A4%96%E7%BD%91%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86/</url>
     <content><![CDATA[<p><strong>参考奇安信攻防社区</strong></p>
@@ -747,16 +747,6 @@
       </tags>
   </entry>
   <entry>
-    <title>思科</title>
-    <url>/2024/11/11/%E6%80%9D%E7%A7%91/</url>
-    <content><![CDATA[<h1 id="基本操作"><a href="#基本操作" class="headerlink" title="基本操作"></a>基本操作</h1><p><img src="/../images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20241111161000.jpg" alt="微信图片_20241111161000" loading="lazy"></p>
-<p><img src="/../images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20241111160951.jpg" alt="微信图片_20241111160951" loading="lazy"></p>
-]]></content>
-      <tags>
-        <tag>思科模拟器</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>报错注入</title>
     <url>/2024/12/25/%E6%8A%A5%E9%94%99%E6%B3%A8%E5%85%A5/</url>
     <content><![CDATA[<h1 id="floor报错"><a href="#floor报错" class="headerlink" title="floor报错"></a>floor报错</h1><p>见less7</p>
@@ -812,6 +802,12 @@
       </tags>
   </entry>
   <entry>
+    <title>虚拟机的搭建</title>
+    <url>/2024/08/08/%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E6%90%AD%E5%BB%BA/</url>
+    <content><![CDATA[<p>虚拟机搭建<br>  1.首先安装vmware（<a href="https://support.broadcom.com/group/ecx/downloads%EF%BC%89%EF%BC%88%E8%A6%81%E6%B3%A8%E5%86%8C%EF%BC%89%E9%80%89%E6%8B%A9VMware">https://support.broadcom.com/group/ecx/downloads）（要注册）选择VMware</a> workstation pro 17下载<br>  2.再下载Ubuntu22.04（<a href="https://cn.ubuntu.com/download%EF%BC%89">https://cn.ubuntu.com/download）</a><br>  3.在VMware中搭建虚拟机参考（<a href="https://www.bilibili.com/video/BV1pX4y1k7u1/?spm_id_from=333.337.search-card.all.click&vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1%EF%BC%89">https://www.bilibili.com/video/BV1pX4y1k7u1/?spm_id_from=333.337.search-card.all.click&amp;vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1）</a><br>  4.进入虚拟机完成Ubuntu的安装。</p>
+]]></content>
+  </entry>
+  <entry>
     <title>笛卡尔积延时注入</title>
     <url>/2025/01/21/%E7%AC%9B%E5%8D%A1%E5%B0%94%E7%A7%AF%E5%BB%B6%E6%97%B6%E6%B3%A8%E5%85%A5/</url>
     <content><![CDATA[<h1 id="适用情况"><a href="#适用情况" class="headerlink" title="适用情况"></a>适用情况</h1><p>如果一个网站存在基于时间的盲注，而恰好sleep这类核心函数被过滤的话，我们便可以使用。</p>
@@ -857,9 +853,13 @@
       </tags>
   </entry>
   <entry>
-    <title>虚拟机的搭建</title>
-    <url>/2024/08/08/%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E6%90%AD%E5%BB%BA/</url>
-    <content><![CDATA[<p>虚拟机搭建<br>  1.首先安装vmware（<a href="https://support.broadcom.com/group/ecx/downloads%EF%BC%89%EF%BC%88%E8%A6%81%E6%B3%A8%E5%86%8C%EF%BC%89%E9%80%89%E6%8B%A9VMware">https://support.broadcom.com/group/ecx/downloads）（要注册）选择VMware</a> workstation pro 17下载<br>  2.再下载Ubuntu22.04（<a href="https://cn.ubuntu.com/download%EF%BC%89">https://cn.ubuntu.com/download）</a><br>  3.在VMware中搭建虚拟机参考（<a href="https://www.bilibili.com/video/BV1pX4y1k7u1/?spm_id_from=333.337.search-card.all.click&vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1%EF%BC%89">https://www.bilibili.com/video/BV1pX4y1k7u1/?spm_id_from=333.337.search-card.all.click&amp;vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1）</a><br>  4.进入虚拟机完成Ubuntu的安装。</p>
+    <title>思科</title>
+    <url>/2024/11/11/%E6%80%9D%E7%A7%91/</url>
+    <content><![CDATA[<h1 id="基本操作"><a href="#基本操作" class="headerlink" title="基本操作"></a>基本操作</h1><p><img src="/../images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20241111161000.jpg" alt="微信图片_20241111161000" loading="lazy"></p>
+<p><img src="/../images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20241111160951.jpg" alt="微信图片_20241111160951" loading="lazy"></p>
 ]]></content>
+      <tags>
+        <tag>思科模拟器</tag>
+      </tags>
   </entry>
 </search>
