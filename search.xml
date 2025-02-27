@@ -1,141 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>DVWA</title>
-    <url>/2025/02/24/DVWA/</url>
-    <content><![CDATA[<h1 id="Brute-Force-暴力"><a href="#Brute-Force-暴力" class="headerlink" title="Brute Force(暴力)"></a>Brute Force(暴力)</h1><h2 id="low"><a href="#low" class="headerlink" title="low"></a>low</h2><p>虽然题目叫暴力破解，但是这里还可以用sql注入。</p>
-<h3 id="sql注入"><a href="#sql注入" class="headerlink" title="sql注入"></a>sql注入</h3><p>我们用万能密码admin‘ or 1&#x3D;1#尝试，发现并不能登录成功，而使用admin‘ and 1&#x3D;1#却可以登录成功。查看源码发现<code>if( $result &amp;&amp; mysqli_num_rows( $result ) == 1 ) &#123;</code></p>
-<p>返回的结果只能是一条而使用or返回的是所有结果，一开始我还不懂为什么，查询资料才发现我对sql的查询逻辑有误解。</p>
-<p>sql有这样的特性<strong>逐行扫描</strong>：数据库会检查每一行是否满足 <code>WHERE</code> 条件，无论是否已找到有效数据。<code>OR 1=1</code> 会导致所有行满足条件，因此全部返回。也就是说是根据结果是否符合or中的两个条件再返回而不是先检查or的条件再执行查询。</p>
-<h3 id="暴力破解"><a href="#暴力破解" class="headerlink" title="暴力破解"></a>暴力破解</h3><p>关于bp中intruder四种爆破模式的区别可参考<a href="https://blog.csdn.net/qq_39101049/article/details/90234669">Burp Suite中intruder爆破模块四种模式的区别_bp两个payload-CSDN博客</a></p>
-<p>使用可参照<a href="https://zhuanlan.zhihu.com/p/648596530">【实验报告】使用Burp Suite爆破网站登录账号，密码 - 知乎</a></p>
-<p><img src="/../images/1740495704682.jpg" alt="1740495704682" loading="lazy"></p>
-<p>成功。</p>
-<h2 id="medium"><a href="#medium" class="headerlink" title="medium"></a>medium</h2><p> 查看源码我们发现这关除了给user和password加上了过滤还在输入错误时sleep2秒以降低爆破的速度。</p>
-<p>同样用bp爆破，只不过时间会慢一点。</p>
-<h2 id="high"><a href="#high" class="headerlink" title="high"></a>high</h2><figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="title function_ invoke__">checkToken</span>( <span class="variable">$_REQUEST</span>[ <span class="string">&#x27;user_token&#x27;</span>], <span class="variable">$_SESSION</span>[ <span class="string">&#x27;session_token&#x27;</span>], <span class="string">&#x27;index.php&#x27;</span>);</span><br></pre></td></tr></table></figure>
-
-<p>查看源码发现这关加了个token的验证。</p>
-<p>我们来看一下token的原理和作用机制。</p>
-<p>什么是Token？</p>
-<p>当用户登录成功，服务器会生成一个唯一的token，这个token通常会包含以下信息：</p>
-<ul>
-<li>用户标识（例如用户ID）</li>
-<li>token生成的时间戳</li>
-<li>token的有效期</li>
-<li>加密签名（用于验证token的完整性和真实性）</li>
-</ul>
-<p>服务器将生成的token发送给客户端，客户端保存token并在每次发送请求时携带这个token与服务器那储存的token进行验证，退出时token消失。这里的token在每次请求还会刷新。</p>
-<p>首先添加payload</p>
-<p><img src="/../images/1740562679448.jpg" alt="1740562679448" loading="lazy"></p>
-<p>payload1(密码)使用字典，payload2（token）类型使用递归提取，在设置里提取响应包的内容</p>
-<p><img src="/../images/1740562802371.jpg" alt="1740562802371" loading="lazy"></p>
-<p><img src="/../images/1740562892199.jpg" alt="1740562892199" loading="lazy"></p>
-<p>这里选择我们刚刚提取的token并且首次请求的token是我们刚刚再次发送请求包中的token不是我们抓包时的token。成功爆破接下来就是等待。</p>
-<img src="../images/1740562965447.jpg" alt="1740562965447" loading="lazy">
-
-<h1 id="Command-Injection-命令执行"><a href="#Command-Injection-命令执行" class="headerlink" title="Command Injection(命令执行)"></a>Command Injection(命令执行)</h1><p>第一次见这种漏洞，先了解一下基本情况。</p>
-<p><strong>漏洞描述</strong><br>命令执行漏洞是指服务器没有对执行的命令进行过滤，用户可以随意执行系统命令，命令执行漏洞属于高危漏洞之一<br>如PHP的命令执行漏洞主要是基于一些函数的参数过滤不足导致，可以执行命令的函数有system( )、exec( )、shell_exec( )、passthru( )、pcntl_execl( )、popen( )、proc_open( )等，当攻击者可以控制这些函数中的参数时，就可以将恶意的系统命令拼接到正常命令中，从而造成命令执行攻击<br>PHP执行命令是继承WebServer用户的权限，这个用户一般都有权限向Web目录写文件，可见该漏洞的危害性相当大。</p>
-<p><strong>命令执行与代码执行的区别</strong></p>
-<p>代码执行：执行效果完全依赖于语言本身</p>
-<p>命令执行：执行效果不受语言本身、命令本身的限制</p>
-<h2 id="window常见的命令拼接符"><a href="#window常见的命令拼接符" class="headerlink" title="window常见的命令拼接符"></a>window常见的命令拼接符</h2><p><code>|</code>直接执行后面的语句</p>
-<p><code>||</code>如果前面命令是错的那么就执行后面的语句，否则只执行前面的语句</p>
-<p><code>&amp;</code>前面和后面命令都要执行，无论前面真假</p>
-<p><code>&amp;&amp;</code>如果前面为假，后面的命令也不执行，如果前面为真则执行两条命令</p>
-<h2 id="Linux常见的命令拼接符"><a href="#Linux常见的命令拼接符" class="headerlink" title="Linux常见的命令拼接符"></a>Linux常见的命令拼接符</h2><p>除了<code>|、||、&amp;、&amp;&amp;</code>还多了一个<code>;</code>，作用和<code>&amp;</code>一样.</p>
-<h2 id="常见的命令执行函数："><a href="#常见的命令执行函数：" class="headerlink" title="常见的命令执行函数："></a>常见的命令执行函数：</h2><h4 id="1）system"><a href="#1）system" class="headerlink" title="1）system"></a><strong>1）system</strong></h4><p>该函数会把执行结果输出 并把输出结果的最后一行作为字符串返回 如果执行失败则返回false 这个也最为常用</p>
-<h4 id="（2）exec"><a href="#（2）exec" class="headerlink" title="（2）exec"></a><strong>（2）exec</strong></h4><p>不输出结果,返回执行结果的最后一行 可以使用output进行输出</p>
-<h4 id="（3）passthru"><a href="#（3）passthru" class="headerlink" title="（3）passthru"></a><strong>（3）passthru</strong></h4><p>此函数只调用命令 并把运行结果原样地直接输出 没有返回值。</p>
-<h4 id="（4）shell-exec"><a href="#（4）shell-exec" class="headerlink" title="（4）shell_exec"></a><strong>（4）shell_exec</strong></h4><p>不输出结果，返回执行结果 使用反引号(&#96;&#96;)时调用的就是此函数</p>
-<h2 id="low-1"><a href="#low-1" class="headerlink" title="low"></a>low</h2><p>查看源码发现并没有任何过滤代码，我们直接用<code>127.0.0.1&amp;whoami</code>,whoami会显示当前用户的用户名和SID（Windows操作系统中用于唯一标识用户、组和计算机账户的一个唯一标识符）。</p>
-<p><img src="/../images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250226200124.png" alt="微信图片_20250226200124" loading="lazy"></p>
-<p>成功。</p>
-<h2 id="medium-1"><a href="#medium-1" class="headerlink" title="medium"></a>medium</h2><p>查看源码</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$substitutions</span> = <span class="keyword">array</span>(     <span class="string">&#x27;&amp;&amp;&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,     <span class="string">&#x27;;&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,   ); </span><br></pre></td></tr></table></figure>
-
-<p>发现把<code>&amp;&amp;</code>和<code>；</code>过滤了，那么我们可以利用没有被过滤的命令拼接符，如<code>127.0.0.1&amp;whoami</code>.</p>
-<h2 id="high-1"><a href="#high-1" class="headerlink" title="high"></a>high</h2><p>查看源码</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$substitutions</span> = <span class="keyword">array</span>(     <span class="string">&#x27;||&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,     <span class="string">&#x27;&amp;&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,     <span class="string">&#x27;;&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,     <span class="string">&#x27;| &#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,     <span class="string">&#x27;-&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,     <span class="string">&#x27;$&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,     <span class="string">&#x27;(&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,     <span class="string">&#x27;)&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,     <span class="string">&#x27;`&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,   ); </span><br></pre></td></tr></table></figure>
-
-<p>发现把能过滤的都过滤了，不过仔细看发现<code>|</code>其实是<code>| </code>,多了个括号，那么这个过滤是没用的。我们直接用127.0.0.1|whoami测试成功。</p>
-<h1 id="CSRF（跨站请求伪造）"><a href="#CSRF（跨站请求伪造）" class="headerlink" title="CSRF（跨站请求伪造）"></a>CSRF（跨站请求伪造）</h1><p><strong>第一次见，看原理：</strong></p>
-<p>简单的说，是攻击者通过一些技术手段欺骗用户的浏览器去访问一个自己以前认证过的站点并运行一些操作（如发邮件，发消息，甚至财产操作（如转账和购买商品））。因为浏览器之前认证过，所以被访问的站点会觉得这是真正的用户操作而去运行。</p>
-<p><img src="/../images/4ac86263c3d9cf6806d06c2129d42058.jpeg" alt="4ac86263c3d9cf6806d06c2129d42058" loading="lazy"></p>
-<p>从上图能够看出，要完毕一次CSRF攻击，受害者必须依次完毕两个步骤：</p>
-<p>​       <code> 登录受信任站点A，并在本地生成Cookie。</code></p>
-<p>​       <code> 在不登出A的情况下，访问危险站点B。</code>(要在同一个浏览器中进行)</p>
-<p>攻击者只有预测出URL的所有参数与参数值，才能成功地构造一个伪造的请求;反之，攻击者将无法攻击成功。</p>
-<h2 id="low-2"><a href="#low-2" class="headerlink" title="low"></a>low</h2><p>我们修改密码后发现发送的是GET请求，URL如下：</p>
-<p><code>http://dvwa:8898/vulnerabilities/csrf/?password_new=password&amp;password_conf=password&amp;Change=Change#</code></p>
-<p>由此我们也可以伪造一个url</p>
-<p><code>http://dvwa:8898/vulnerabilities/csrf/?password_new=123&amp;password_conf=123&amp;Change=Change#</code></p>
-<p>这样在登录状态下用同一个浏览器打开便会修改密码。</p>
-<p>但是这样的url太明显了，我们可以利用站长工具生成一个短域名，用这个短域名进入的也是同一个页面。</p>
-<p>我们也可以在html中用支持src的标签将url隐藏起来。</p>
-<h2 id="medium-2"><a href="#medium-2" class="headerlink" title="medium"></a>medium</h2><p>这关主要改变的代码是</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="title function_ invoke__">stripos</span>( <span class="variable">$_SERVER</span>[ <span class="string">&#x27;HTTP_REFERER&#x27;</span> ] ,<span class="variable">$_SERVER</span>[ <span class="string">&#x27;SERVER_NAME&#x27;</span> ]) !== <span class="literal">false</span> </span><br></pre></td></tr></table></figure>
-
-<p>代码检查了保留变量 <strong>HTTP_REFERER</strong>（http包头的Referer参数的值，表示来源地址）中是否包含<strong>SERVER_NAME</strong>（http包头的Host参数，及要访问的主机名）</p>
-<p>这个检查的作用是验证用户是否是从同一个网站上的另一个页面跳转过来的，防止外部链接直接访问某些页面，增加网站安全性。</p>
-<p>我们可以抓包修改请求头referer</p>
-<p>我们也可以绕过</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">目录混淆法：将HTML页面放在127.0.0.1目录下，构建payload</span><br><span class="line">http://www.xxx.com/127.0.0.1/csrf.html</span><br><span class="line"></span><br><span class="line">文件名混淆法：将HTML文件重命名为127.0.0.1，构建payload</span><br><span class="line">http://www.xxx.com/127.0.0.1.html</span><br><span class="line"></span><br><span class="line">问号拼接法：由于HTML不接受参数，因此随便输入都可以绕过referer检测</span><br><span class="line">http://www.xxx.com/csrf.html?mrl64</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <tags>
-        <tag>DVWA</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <url>/2024/08/04/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>less23-27</title>
-    <url>/2025/01/14/less23-27/</url>
-    <content><![CDATA[<h1 id="less23"><a href="#less23" class="headerlink" title="less23"></a>less23</h1><p>尝试之前的get题的方法发现总是有语法错误，而且报错内容中多出一个引号，我们可以推断我们注释符号没有起作用，查看源码。</p>
-<p><img src="/../images/1736866487923.jpg" alt="1736866487923" loading="lazy"></p>
-<p>果然给干没了，既然不能注释掉多余的引号那么我们可以想到使用多个or来中和掉多出来的一个引号payload如下:</p>
-<p><code> ?id=2&#39;  or extractvalue(1,concat(0x7e,(select database()),0x7e)) or &#39;1&#39;=&#39;1</code></p>
-<p>成功。</p>
-<p><img src="/../images/1736866811069.jpg" alt="1736866811069" loading="lazy"></p>
-<h1 id="less24"><a href="#less24" class="headerlink" title="less24"></a>less24</h1><p>首先查找注入点</p>
-<p><img src="/../images/1738307969207.jpg" alt="1738307969207" loading="lazy"></p>
-<p>发现在登录和注册都有过滤，我们试着登录看看</p>
-<p><img src="/../images/1738308060203.jpg" alt="1738308060203" loading="lazy"></p>
-<p>发现能改密码，但也过滤了，无思路，我们看看源码。发现这里是用session获取的用户名且并没过滤，这就是注入点</p>
-<p><img src="/../images/1738308271201(1).jpg" alt="1738308271201(1)" loading="lazy"></p>
-<p><img src="/../images/1738308636055.jpg" alt="1738308636055" loading="lazy"></p>
-<p>这里的原理是注册一个危险字段的用户，由于通过session获取的时候没过滤，那么储存在session中的危险字段便能利用（这里注册时的转义只是暂时的）。</p>
-<p>我们讲用户名注册成例如这样</p>
-<p><code>admin&#39;#</code></p>
-<p>此时sql语句变成这样</p>
-<p><code>&quot;UPDATE users SET PASSWORD=&#39;$pass&#39; where username=&#39;admin&#39;#&#39; and password=&#39;$curr_pass&#39; &quot;</code></p>
-<p>那么#后面的语句便被注释了，也就是说我们不需要知道当下的密码便可以修改admin的密码。</p>
-<h1 id="less25-less25a"><a href="#less25-less25a" class="headerlink" title="less25&amp;less25a"></a>less25&amp;less25a</h1><p>由提示可知，”AND”和”OR”被过滤了，那么我们可以使用双写绕过。</p>
-<p><strong>双写绕过：</strong></p>
-<p>即讲“or”写成“OorR”，这样中间的“or”会被过滤掉，而“OR”则被留下，值得注意的是，如果在payload中的其他单词中也有“or”或者“and”的部分，则也要双写以防被过滤。</p>
-<p>less25a则是数字型注入，其余和less25差不多。</p>
-<h1 id="less26-less26a"><a href="#less26-less26a" class="headerlink" title="less26&amp;less26a"></a>less26&amp;less26a</h1><p>在这一关，除了or 和and被过滤，还有注释符和空格也被过滤了，那么我们可以利用其他的字符代替使用<strong>“%a0”</strong> 或<strong>“%0b”</strong> 替代空格，使用<strong>“||”</strong> 替代 “or”，使用<strong>“%26%26”</strong> 替代 “and”。</p>
-<p>26a不回显报错信息，所以我们只能让信息爆在显示位上。</p>
-<h1 id="less27-less27a"><a href="#less27-less27a" class="headerlink" title="less27&amp;less27a"></a>less27&amp;less27a</h1><p>or和and没被过滤，不过空格和注释符还有select和union被过滤了。我们可以用<strong>大小写过滤</strong>，即将大小写混杂，也可以使用报错注入来回显信息。</p>
-<p>27a报错无回显，那么就用大小写过滤。</p>
-<p>我们发现有些过滤语句后面的反斜杠上有m或s，这是什么意思呢，这是设定的修正符，修正符的具体效果参照下面这个链接：<br><a href="https://www.php.net/manual/zh/reference.pcre.pattern.modifiers.php#reference.pcre.pattern.modifiers">正则表达式中的修正符</a></p>
+    <title>less18-22</title>
+    <url>/2024/11/24/less18-22/</url>
+    <content><![CDATA[<h1 id="less18"><a href="#less18" class="headerlink" title="less18"></a>less18</h1><p>如果输入正确的账号密码，则页面回显你的ip与user-agent</p>
+<p><img src="/../images/1732457032265.png" alt="1732457032265" loading="lazy"></p>
+<p>如果错误登录则只会回显ip，显然不能进行之前的注入。</p>
+<p>我们查看源码（这里是一部分）</p>
+<p><img src="/../images/1732419575415.jpg" alt="1732419575415" loading="lazy"></p>
+<p>发现密码和账户都被17关的过滤给保护起来了。因此显然难以通过账户密码进行注入，但我们可以发现在查询成功处有给insert操作将uagent，与ip和uname插入括号里的三个字段中，我们便能想到通过修改uagent的值进行注入。</p>
+<p>要修改这个值我们需使用burp suite来进行抓包。</p>
+<p>并且修改user-agent的值。</p>
+<p><img src="/../images/1733489271913.jpg" alt="1733489271913" loading="lazy"></p>
+<p>这里的payload是<code>1&#39;,&#39;2&#39;,(select 1 from (select concat((floor(rand(0)*2 )),database()) as a,count(*) from information_schema.tables group by a)as t))#</code></p>
+<p>我们也可以用extractvalue,updatexml等函数的报错注入来简化payload。</p>
+<h1 id="less19"><a href="#less19" class="headerlink" title="less19"></a>less19</h1><p>看关卡标题我们就可以知道这关和上关类似，不过这次我们需要修改的是Referer请求头，Referer指的是发起请求的上一页面也就是要从哪跳转到下一页面。</p>
+<p>我们构造的payload和上一关类似</p>
+<p><code>1&#39;,extractvalue(1,concat(0x7e,(select database()))))#</code></p>
+<p>因为源码中insert语句的变量少了。</p>
+<p><img src="/../images/1735725090372.jpg" alt="1735725090372" loading="lazy"></p>
+<p>注入成功。</p>
+<h1 id="less20-cookie"><a href="#less20-cookie" class="headerlink" title="less20(cookie)"></a>less20(cookie)</h1><p>首先尝试直接在username和password注入，无果，我们可以首先使用合法的账户登录，再由标题可知我们可以从cookie下手，既然页面能显示我的cookie，那么他一定在后台获取了我的cookie，又显示了我的账户密码，我们便可以猜测是通过检验cookie中的uname的值来显示不同的账号密码，我们查看源码。</p>
+<p><img src="/../images/1736838783987.jpg" alt="1736838783987" loading="lazy"></p>
+<p>我们便能知道注入点就是那个SQL语句。我们只要修改cookie的值便能进行注入。例如</p>
+<p><img src="/../images/1736839137733.jpg" alt="1736839137733" loading="lazy"></p>
+<p>我们便可以得到想要的值。</p>
+<h1 id="less21-cookie"><a href="#less21-cookie" class="headerlink" title="less21(cookie)"></a>less21(cookie)</h1><p>同上，不过是括号加单引号闭合，且是base64编码。</p>
+<h1 id="less22-cookie"><a href="#less22-cookie" class="headerlink" title="less22(cookie)"></a>less22(cookie)</h1><p>同20，但是双引号</p>
 ]]></content>
       <tags>
         <tag>sqlilab注入 web</tag>
@@ -247,36 +138,109 @@
       </tags>
   </entry>
   <entry>
-    <title>less18-22</title>
-    <url>/2024/11/24/less18-22/</url>
-    <content><![CDATA[<h1 id="less18"><a href="#less18" class="headerlink" title="less18"></a>less18</h1><p>如果输入正确的账号密码，则页面回显你的ip与user-agent</p>
-<p><img src="/../images/1732457032265.png" alt="1732457032265" loading="lazy"></p>
-<p>如果错误登录则只会回显ip，显然不能进行之前的注入。</p>
-<p>我们查看源码（这里是一部分）</p>
-<p><img src="/../images/1732419575415.jpg" alt="1732419575415" loading="lazy"></p>
-<p>发现密码和账户都被17关的过滤给保护起来了。因此显然难以通过账户密码进行注入，但我们可以发现在查询成功处有给insert操作将uagent，与ip和uname插入括号里的三个字段中，我们便能想到通过修改uagent的值进行注入。</p>
-<p>要修改这个值我们需使用burp suite来进行抓包。</p>
-<p>并且修改user-agent的值。</p>
-<p><img src="/../images/1733489271913.jpg" alt="1733489271913" loading="lazy"></p>
-<p>这里的payload是<code>1&#39;,&#39;2&#39;,(select 1 from (select concat((floor(rand(0)*2 )),database()) as a,count(*) from information_schema.tables group by a)as t))#</code></p>
-<p>我们也可以用extractvalue,updatexml等函数的报错注入来简化payload。</p>
-<h1 id="less19"><a href="#less19" class="headerlink" title="less19"></a>less19</h1><p>看关卡标题我们就可以知道这关和上关类似，不过这次我们需要修改的是Referer请求头，Referer指的是发起请求的上一页面也就是要从哪跳转到下一页面。</p>
-<p>我们构造的payload和上一关类似</p>
-<p><code>1&#39;,extractvalue(1,concat(0x7e,(select database()))))#</code></p>
-<p>因为源码中insert语句的变量少了。</p>
-<p><img src="/../images/1735725090372.jpg" alt="1735725090372" loading="lazy"></p>
-<p>注入成功。</p>
-<h1 id="less20-cookie"><a href="#less20-cookie" class="headerlink" title="less20(cookie)"></a>less20(cookie)</h1><p>首先尝试直接在username和password注入，无果，我们可以首先使用合法的账户登录，再由标题可知我们可以从cookie下手，既然页面能显示我的cookie，那么他一定在后台获取了我的cookie，又显示了我的账户密码，我们便可以猜测是通过检验cookie中的uname的值来显示不同的账号密码，我们查看源码。</p>
-<p><img src="/../images/1736838783987.jpg" alt="1736838783987" loading="lazy"></p>
-<p>我们便能知道注入点就是那个SQL语句。我们只要修改cookie的值便能进行注入。例如</p>
-<p><img src="/../images/1736839137733.jpg" alt="1736839137733" loading="lazy"></p>
-<p>我们便可以得到想要的值。</p>
-<h1 id="less21-cookie"><a href="#less21-cookie" class="headerlink" title="less21(cookie)"></a>less21(cookie)</h1><p>同上，不过是括号加单引号闭合，且是base64编码。</p>
-<h1 id="less22-cookie"><a href="#less22-cookie" class="headerlink" title="less22(cookie)"></a>less22(cookie)</h1><p>同20，但是双引号</p>
+    <title>DVWA</title>
+    <url>/2025/02/24/DVWA/</url>
+    <content><![CDATA[<h1 id="Brute-Force-暴力"><a href="#Brute-Force-暴力" class="headerlink" title="Brute Force(暴力)"></a>Brute Force(暴力)</h1><h2 id="low"><a href="#low" class="headerlink" title="low"></a>low</h2><p>虽然题目叫暴力破解，但是这里还可以用sql注入。</p>
+<h3 id="sql注入"><a href="#sql注入" class="headerlink" title="sql注入"></a>sql注入</h3><p>我们用万能密码admin‘ or 1&#x3D;1#尝试，发现并不能登录成功，而使用admin‘ and 1&#x3D;1#却可以登录成功。查看源码发现<code>if( $result &amp;&amp; mysqli_num_rows( $result ) == 1 ) &#123;</code></p>
+<p>返回的结果只能是一条而使用or返回的是所有结果，一开始我还不懂为什么，查询资料才发现我对sql的查询逻辑有误解。</p>
+<p>sql有这样的特性<strong>逐行扫描</strong>：数据库会检查每一行是否满足 <code>WHERE</code> 条件，无论是否已找到有效数据。<code>OR 1=1</code> 会导致所有行满足条件，因此全部返回。也就是说是根据结果是否符合or中的两个条件再返回而不是先检查or的条件再执行查询。</p>
+<h3 id="暴力破解"><a href="#暴力破解" class="headerlink" title="暴力破解"></a>暴力破解</h3><p>关于bp中intruder四种爆破模式的区别可参考<a href="https://blog.csdn.net/qq_39101049/article/details/90234669">Burp Suite中intruder爆破模块四种模式的区别_bp两个payload-CSDN博客</a></p>
+<p>使用可参照<a href="https://zhuanlan.zhihu.com/p/648596530">【实验报告】使用Burp Suite爆破网站登录账号，密码 - 知乎</a></p>
+<p><img src="/../images/1740495704682.jpg" alt="1740495704682" loading="lazy"></p>
+<p>成功。</p>
+<h2 id="medium"><a href="#medium" class="headerlink" title="medium"></a>medium</h2><p> 查看源码我们发现这关除了给user和password加上了过滤还在输入错误时sleep2秒以降低爆破的速度。</p>
+<p>同样用bp爆破，只不过时间会慢一点。</p>
+<h2 id="high"><a href="#high" class="headerlink" title="high"></a>high</h2><figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="title function_ invoke__">checkToken</span>( <span class="variable">$_REQUEST</span>[ <span class="string">&#x27;user_token&#x27;</span>], <span class="variable">$_SESSION</span>[ <span class="string">&#x27;session_token&#x27;</span>], <span class="string">&#x27;index.php&#x27;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>查看源码发现这关加了个token的验证。</p>
+<p>我们来看一下token的原理和作用机制。</p>
+<p>什么是Token？</p>
+<p>当用户登录成功，服务器会生成一个唯一的token，这个token通常会包含以下信息：</p>
+<ul>
+<li>用户标识（例如用户ID）</li>
+<li>token生成的时间戳</li>
+<li>token的有效期</li>
+<li>加密签名（用于验证token的完整性和真实性）</li>
+</ul>
+<p>服务器将生成的token发送给客户端，客户端保存token并在每次发送请求时携带这个token与服务器那储存的token进行验证，退出时token消失。这里的token在每次请求还会刷新。</p>
+<p>首先添加payload</p>
+<p><img src="/../images/1740562679448.jpg" alt="1740562679448" loading="lazy"></p>
+<p>payload1(密码)使用字典，payload2（token）类型使用递归提取，在设置里提取响应包的内容</p>
+<p><img src="/../images/1740562802371.jpg" alt="1740562802371" loading="lazy"></p>
+<p><img src="/../images/1740562892199.jpg" alt="1740562892199" loading="lazy"></p>
+<p>这里选择我们刚刚提取的token并且首次请求的token是我们刚刚再次发送请求包中的token不是我们抓包时的token。成功爆破接下来就是等待。</p>
+<img src="../images/1740562965447.jpg" alt="1740562965447" loading="lazy">
+
+<h1 id="Command-Injection-命令执行"><a href="#Command-Injection-命令执行" class="headerlink" title="Command Injection(命令执行)"></a>Command Injection(命令执行)</h1><p>第一次见这种漏洞，先了解一下基本情况。</p>
+<p><strong>漏洞描述</strong><br>命令执行漏洞是指服务器没有对执行的命令进行过滤，用户可以随意执行系统命令，命令执行漏洞属于高危漏洞之一<br>如PHP的命令执行漏洞主要是基于一些函数的参数过滤不足导致，可以执行命令的函数有system( )、exec( )、shell_exec( )、passthru( )、pcntl_execl( )、popen( )、proc_open( )等，当攻击者可以控制这些函数中的参数时，就可以将恶意的系统命令拼接到正常命令中，从而造成命令执行攻击<br>PHP执行命令是继承WebServer用户的权限，这个用户一般都有权限向Web目录写文件，可见该漏洞的危害性相当大。</p>
+<p><strong>命令执行与代码执行的区别</strong></p>
+<p>代码执行：执行效果完全依赖于语言本身</p>
+<p>命令执行：执行效果不受语言本身、命令本身的限制</p>
+<h2 id="window常见的命令拼接符"><a href="#window常见的命令拼接符" class="headerlink" title="window常见的命令拼接符"></a>window常见的命令拼接符</h2><p><code>|</code>直接执行后面的语句</p>
+<p><code>||</code>如果前面命令是错的那么就执行后面的语句，否则只执行前面的语句</p>
+<p><code>&amp;</code>前面和后面命令都要执行，无论前面真假</p>
+<p><code>&amp;&amp;</code>如果前面为假，后面的命令也不执行，如果前面为真则执行两条命令</p>
+<h2 id="Linux常见的命令拼接符"><a href="#Linux常见的命令拼接符" class="headerlink" title="Linux常见的命令拼接符"></a>Linux常见的命令拼接符</h2><p>除了<code>|、||、&amp;、&amp;&amp;</code>还多了一个<code>;</code>，作用和<code>&amp;</code>一样.</p>
+<h2 id="常见的命令执行函数："><a href="#常见的命令执行函数：" class="headerlink" title="常见的命令执行函数："></a>常见的命令执行函数：</h2><h4 id="1）system"><a href="#1）system" class="headerlink" title="1）system"></a><strong>1）system</strong></h4><p>该函数会把执行结果输出 并把输出结果的最后一行作为字符串返回 如果执行失败则返回false 这个也最为常用</p>
+<h4 id="（2）exec"><a href="#（2）exec" class="headerlink" title="（2）exec"></a><strong>（2）exec</strong></h4><p>不输出结果,返回执行结果的最后一行 可以使用output进行输出</p>
+<h4 id="（3）passthru"><a href="#（3）passthru" class="headerlink" title="（3）passthru"></a><strong>（3）passthru</strong></h4><p>此函数只调用命令 并把运行结果原样地直接输出 没有返回值。</p>
+<h4 id="（4）shell-exec"><a href="#（4）shell-exec" class="headerlink" title="（4）shell_exec"></a><strong>（4）shell_exec</strong></h4><p>不输出结果，返回执行结果 使用反引号(&#96;&#96;)时调用的就是此函数</p>
+<h2 id="low-1"><a href="#low-1" class="headerlink" title="low"></a>low</h2><p>查看源码发现并没有任何过滤代码，我们直接用<code>127.0.0.1&amp;whoami</code>,whoami会显示当前用户的用户名和SID（Windows操作系统中用于唯一标识用户、组和计算机账户的一个唯一标识符）。</p>
+<p><img src="/../images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250226200124.png" alt="微信图片_20250226200124" loading="lazy"></p>
+<p>成功。</p>
+<h2 id="medium-1"><a href="#medium-1" class="headerlink" title="medium"></a>medium</h2><p>查看源码</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$substitutions</span> = <span class="keyword">array</span>(     <span class="string">&#x27;&amp;&amp;&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,     <span class="string">&#x27;;&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,   ); </span><br></pre></td></tr></table></figure>
+
+<p>发现把<code>&amp;&amp;</code>和<code>；</code>过滤了，那么我们可以利用没有被过滤的命令拼接符，如<code>127.0.0.1&amp;whoami</code>.</p>
+<h2 id="high-1"><a href="#high-1" class="headerlink" title="high"></a>high</h2><p>查看源码</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$substitutions</span> = <span class="keyword">array</span>(     <span class="string">&#x27;||&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,     <span class="string">&#x27;&amp;&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,     <span class="string">&#x27;;&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,     <span class="string">&#x27;| &#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,     <span class="string">&#x27;-&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,     <span class="string">&#x27;$&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,     <span class="string">&#x27;(&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,     <span class="string">&#x27;)&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,     <span class="string">&#x27;`&#x27;</span> =&gt; <span class="string">&#x27;&#x27;</span>,   ); </span><br></pre></td></tr></table></figure>
+
+<p>发现把能过滤的都过滤了，不过仔细看发现<code>|</code>其实是<code>| </code>,多了个括号，那么这个过滤是没用的。我们直接用127.0.0.1|whoami测试成功。</p>
+<h1 id="CSRF（跨站请求伪造）"><a href="#CSRF（跨站请求伪造）" class="headerlink" title="CSRF（跨站请求伪造）"></a>CSRF（跨站请求伪造）</h1><p><strong>第一次见，看原理：</strong></p>
+<p>简单的说，是攻击者通过一些技术手段欺骗用户的浏览器去访问一个自己以前认证过的站点并运行一些操作（如发邮件，发消息，甚至财产操作（如转账和购买商品））。因为浏览器之前认证过，所以被访问的站点会觉得这是真正的用户操作而去运行。</p>
+<p><img src="/../images/4ac86263c3d9cf6806d06c2129d42058.jpeg" alt="4ac86263c3d9cf6806d06c2129d42058" loading="lazy"></p>
+<p>从上图能够看出，要完毕一次CSRF攻击，受害者必须依次完毕两个步骤：</p>
+<p>​       <code> 登录受信任站点A，并在本地生成Cookie。</code></p>
+<p>​       <code> 在不登出A的情况下，访问危险站点B。</code>(要在同一个浏览器中进行)</p>
+<p>攻击者只有预测出URL的所有参数与参数值，才能成功地构造一个伪造的请求;反之，攻击者将无法攻击成功。</p>
+<h2 id="low-2"><a href="#low-2" class="headerlink" title="low"></a>low</h2><p>我们修改密码后发现发送的是GET请求，URL如下：</p>
+<p><code>http://dvwa:8898/vulnerabilities/csrf/?password_new=password&amp;password_conf=password&amp;Change=Change#</code></p>
+<p>由此我们也可以伪造一个url</p>
+<p><code>http://dvwa:8898/vulnerabilities/csrf/?password_new=123&amp;password_conf=123&amp;Change=Change#</code></p>
+<p>这样在登录状态下用同一个浏览器打开便会修改密码。</p>
+<p>但是这样的url太明显了，我们可以利用站长工具生成一个短域名，用这个短域名进入的也是同一个页面。</p>
+<p>我们也可以在html中用支持src的标签将url隐藏起来。</p>
+<h2 id="medium-2"><a href="#medium-2" class="headerlink" title="medium"></a>medium</h2><p>这关主要改变的代码是</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="title function_ invoke__">stripos</span>( <span class="variable">$_SERVER</span>[ <span class="string">&#x27;HTTP_REFERER&#x27;</span> ] ,<span class="variable">$_SERVER</span>[ <span class="string">&#x27;SERVER_NAME&#x27;</span> ]) !== <span class="literal">false</span> </span><br></pre></td></tr></table></figure>
+
+<p>代码检查了保留变量 <strong>HTTP_REFERER</strong>（http包头的Referer参数的值，表示来源地址）中是否包含<strong>SERVER_NAME</strong>（http包头的Host参数，及要访问的主机名）</p>
+<p>这个检查的作用是验证用户是否是从同一个网站上的另一个页面跳转过来的，防止外部链接直接访问某些页面，增加网站安全性。</p>
+<p>我们可以抓包修改请求头referer</p>
+<p>我们也可以绕过</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">目录混淆法：将HTML页面放在127.0.0.1目录下，构建payload</span><br><span class="line">http://www.xxx.com/127.0.0.1/csrf.html</span><br><span class="line"></span><br><span class="line">文件名混淆法：将HTML文件重命名为127.0.0.1，构建payload</span><br><span class="line">http://www.xxx.com/127.0.0.1.html</span><br><span class="line"></span><br><span class="line">问号拼接法：由于HTML不接受参数，因此随便输入都可以绕过referer检测</span><br><span class="line">http://www.xxx.com/csrf.html?mrl64</span><br></pre></td></tr></table></figure>
+
 ]]></content>
       <tags>
-        <tag>sqlilab注入 web</tag>
+        <tag>DVWA</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <url>/2024/08/04/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
   </entry>
   <entry>
     <title>less28-less37</title>
@@ -354,13 +318,15 @@
       </tags>
   </entry>
   <entry>
-    <title>less50-53</title>
-    <url>/2025/02/19/less50-53/</url>
-    <content><![CDATA[<p><strong>Less 50 ~ 53 和 Less 46 ~ 49 的注入方法完全一样，但是这 4 个 Less 可以进行堆叠注入。</strong></p>
-<h1 id="less50"><a href="#less50" class="headerlink" title="less50"></a>less50</h1><p>数值型注入，和 Less 46 一样使用报错注入就可以完成</p>
-<h1 id="less51"><a href="#less51" class="headerlink" title="less51"></a>less51</h1><p>单引号闭合的字符型注入，和 Less 47 一样使用报错注入就可以完成。</p>
-<h1 id="less52"><a href="#less52" class="headerlink" title="less52"></a>less52</h1><p>数值型的盲注，和 Less 48 一样使用时间盲注就可以完成。</p>
-<h1 id="less53"><a href="#less53" class="headerlink" title="less53"></a>less53</h1><p>单引号闭合的字符型,和 Less 49 一样使用时间盲注就可以完成。</p>
+    <title>less42-45</title>
+    <url>/2025/02/19/less42-45/</url>
+    <content><![CDATA[<p><strong>Less 42 ~ 45 是使用 POST 提交参数的登录界面，username 字段进行了参数过滤，但是 password 字段没有。此处可以在 password 字段使用万能密码直接夺取用户，也可以在该字段处使用堆叠注入。</strong></p>
+<h1 id="less42"><a href="#less42" class="headerlink" title="less42"></a>less42</h1><p>在用户名使用万能密码测试，全部都登录失败。</p>
+<p>在密码字段使用万能密码测试，使用单引号闭合时登录成功。说明用户名参数注入时存在过滤，密码字段存在单引号闭合的字符型注入。</p>
+<p>可以在已知某个用户的用户名的条件下使用万能密码夺取用户，也可以使用二次注入进行攻击。由于密码参数没有进行防御，可以在该字段测试堆叠注入。使用 Less 38 的测试流程，每次登陆时完成一步堆叠注入。</p>
+<h1 id="less43"><a href="#less43" class="headerlink" title="less43"></a>less43</h1><p>和less42一样，不过是单引号和括号闭合。</p>
+<h1 id="less44"><a href="#less44" class="headerlink" title="less44"></a>less44</h1><p>和less42一样</p>
+<h1 id="less45"><a href="#less45" class="headerlink" title="less45"></a>less45</h1><p>和less43一样</p>
 ]]></content>
       <tags>
         <tag>sqlilab注入 web</tag>
@@ -382,19 +348,96 @@
       </tags>
   </entry>
   <entry>
-    <title>less42-45</title>
-    <url>/2025/02/19/less42-45/</url>
-    <content><![CDATA[<p><strong>Less 42 ~ 45 是使用 POST 提交参数的登录界面，username 字段进行了参数过滤，但是 password 字段没有。此处可以在 password 字段使用万能密码直接夺取用户，也可以在该字段处使用堆叠注入。</strong></p>
-<h1 id="less42"><a href="#less42" class="headerlink" title="less42"></a>less42</h1><p>在用户名使用万能密码测试，全部都登录失败。</p>
-<p>在密码字段使用万能密码测试，使用单引号闭合时登录成功。说明用户名参数注入时存在过滤，密码字段存在单引号闭合的字符型注入。</p>
-<p>可以在已知某个用户的用户名的条件下使用万能密码夺取用户，也可以使用二次注入进行攻击。由于密码参数没有进行防御，可以在该字段测试堆叠注入。使用 Less 38 的测试流程，每次登陆时完成一步堆叠注入。</p>
-<h1 id="less43"><a href="#less43" class="headerlink" title="less43"></a>less43</h1><p>和less42一样，不过是单引号和括号闭合。</p>
-<h1 id="less44"><a href="#less44" class="headerlink" title="less44"></a>less44</h1><p>和less42一样</p>
-<h1 id="less45"><a href="#less45" class="headerlink" title="less45"></a>less45</h1><p>和less43一样</p>
+    <title>less23-27</title>
+    <url>/2025/01/14/less23-27/</url>
+    <content><![CDATA[<h1 id="less23"><a href="#less23" class="headerlink" title="less23"></a>less23</h1><p>尝试之前的get题的方法发现总是有语法错误，而且报错内容中多出一个引号，我们可以推断我们注释符号没有起作用，查看源码。</p>
+<p><img src="/../images/1736866487923.jpg" alt="1736866487923" loading="lazy"></p>
+<p>果然给干没了，既然不能注释掉多余的引号那么我们可以想到使用多个or来中和掉多出来的一个引号payload如下:</p>
+<p><code> ?id=2&#39;  or extractvalue(1,concat(0x7e,(select database()),0x7e)) or &#39;1&#39;=&#39;1</code></p>
+<p>成功。</p>
+<p><img src="/../images/1736866811069.jpg" alt="1736866811069" loading="lazy"></p>
+<h1 id="less24"><a href="#less24" class="headerlink" title="less24"></a>less24</h1><p>首先查找注入点</p>
+<p><img src="/../images/1738307969207.jpg" alt="1738307969207" loading="lazy"></p>
+<p>发现在登录和注册都有过滤，我们试着登录看看</p>
+<p><img src="/../images/1738308060203.jpg" alt="1738308060203" loading="lazy"></p>
+<p>发现能改密码，但也过滤了，无思路，我们看看源码。发现这里是用session获取的用户名且并没过滤，这就是注入点</p>
+<p><img src="/../images/1738308271201(1).jpg" alt="1738308271201(1)" loading="lazy"></p>
+<p><img src="/../images/1738308636055.jpg" alt="1738308636055" loading="lazy"></p>
+<p>这里的原理是注册一个危险字段的用户，由于通过session获取的时候没过滤，那么储存在session中的危险字段便能利用（这里注册时的转义只是暂时的）。</p>
+<p>我们讲用户名注册成例如这样</p>
+<p><code>admin&#39;#</code></p>
+<p>此时sql语句变成这样</p>
+<p><code>&quot;UPDATE users SET PASSWORD=&#39;$pass&#39; where username=&#39;admin&#39;#&#39; and password=&#39;$curr_pass&#39; &quot;</code></p>
+<p>那么#后面的语句便被注释了，也就是说我们不需要知道当下的密码便可以修改admin的密码。</p>
+<h1 id="less25-less25a"><a href="#less25-less25a" class="headerlink" title="less25&amp;less25a"></a>less25&amp;less25a</h1><p>由提示可知，”AND”和”OR”被过滤了，那么我们可以使用双写绕过。</p>
+<p><strong>双写绕过：</strong></p>
+<p>即讲“or”写成“OorR”，这样中间的“or”会被过滤掉，而“OR”则被留下，值得注意的是，如果在payload中的其他单词中也有“or”或者“and”的部分，则也要双写以防被过滤。</p>
+<p>less25a则是数字型注入，其余和less25差不多。</p>
+<h1 id="less26-less26a"><a href="#less26-less26a" class="headerlink" title="less26&amp;less26a"></a>less26&amp;less26a</h1><p>在这一关，除了or 和and被过滤，还有注释符和空格也被过滤了，那么我们可以利用其他的字符代替使用<strong>“%a0”</strong> 或<strong>“%0b”</strong> 替代空格，使用<strong>“||”</strong> 替代 “or”，使用<strong>“%26%26”</strong> 替代 “and”。</p>
+<p>26a不回显报错信息，所以我们只能让信息爆在显示位上。</p>
+<h1 id="less27-less27a"><a href="#less27-less27a" class="headerlink" title="less27&amp;less27a"></a>less27&amp;less27a</h1><p>or和and没被过滤，不过空格和注释符还有select和union被过滤了。我们可以用<strong>大小写过滤</strong>，即将大小写混杂，也可以使用报错注入来回显信息。</p>
+<p>27a报错无回显，那么就用大小写过滤。</p>
+<p>我们发现有些过滤语句后面的反斜杠上有m或s，这是什么意思呢，这是设定的修正符，修正符的具体效果参照下面这个链接：<br><a href="https://www.php.net/manual/zh/reference.pcre.pattern.modifiers.php#reference.pcre.pattern.modifiers">正则表达式中的修正符</a></p>
 ]]></content>
       <tags>
         <tag>sqlilab注入 web</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>less50-53</title>
+    <url>/2025/02/19/less50-53/</url>
+    <content><![CDATA[<p><strong>Less 50 ~ 53 和 Less 46 ~ 49 的注入方法完全一样，但是这 4 个 Less 可以进行堆叠注入。</strong></p>
+<h1 id="less50"><a href="#less50" class="headerlink" title="less50"></a>less50</h1><p>数值型注入，和 Less 46 一样使用报错注入就可以完成</p>
+<h1 id="less51"><a href="#less51" class="headerlink" title="less51"></a>less51</h1><p>单引号闭合的字符型注入，和 Less 47 一样使用报错注入就可以完成。</p>
+<h1 id="less52"><a href="#less52" class="headerlink" title="less52"></a>less52</h1><p>数值型的盲注，和 Less 48 一样使用时间盲注就可以完成。</p>
+<h1 id="less53"><a href="#less53" class="headerlink" title="less53"></a>less53</h1><p>单引号闭合的字符型,和 Less 49 一样使用时间盲注就可以完成。</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>less8-17</title>
+    <url>/2024/11/16/less8-17/</url>
+    <content><![CDATA[<h1 id="less8"><a href="#less8" class="headerlink" title="less8"></a>less8</h1><p>和之前的第五关一样可以用因为正确查询和错误查询的页面不同而使用布尔盲注，脚本如何写后续再更新: )</p>
+<h1 id="less9"><a href="#less9" class="headerlink" title="less9"></a>less9</h1><p>由于查询正确与否的页面相同，这边得使用时间盲注。</p>
+<h1 id="less10"><a href="#less10" class="headerlink" title="less10"></a>less10</h1><p>同第九关，不过是双引号闭合。</p>
+<h1 id="less11"><a href="#less11" class="headerlink" title="less11"></a>less11</h1><p>直接看源码<img src="/../images/1731767328998.jpg" alt="1731767328998" loading="lazy"></p>
+<p>发现这关是通过post传输的账户密码，且为单引号闭合，但换汤不换药，我们使用的查询语句是和之前的一样的。我们在username这进行注入便可以注释掉后面检查密码的语句。</p>
+<h1 id="less12"><a href="#less12" class="headerlink" title="less12"></a>less12</h1><p>直接看源码</p>
+<p><img src="/../images/1731807941898(1).jpg" alt="1731807941898(1)" loading="lazy"></p>
+<p>发现和less11一样，不过是被双引号和括号包围。</p>
+<h1 id="less13"><a href="#less13" class="headerlink" title="less13"></a>less13</h1><p>正确查询时无回显，而报错有回显错误信息，我们可以想到less5，同样可以用盲注或者双查询注入。</p>
+<h1 id="less14"><a href="#less14" class="headerlink" title="less14"></a>less14</h1><p>同13关，不过是闭合方式变成了双引号。</p>
+<h1 id="less15"><a href="#less15" class="headerlink" title="less15"></a>less15</h1><p>直接看代码</p>
+<p><img src="/../images/1731811151864.jpg" alt="1731811151864" loading="lazy"></p>
+<p>发现正确查询和错误查询的回显是一样的（除了那个图片），那么我们可以使用盲注。我们这里先尝试时间盲注，我们用if(x,y,z),如果x为true则返回y，否则z。</p>
+<p>我们便可以编辑出这样的注入<code>1&#39; or if(查询语句,sleep(1),1)-- </code>,如果正确查询，则 让页面延迟，如果错误则返回1无延迟。感觉这样效率比<code>1&#39; or if(查询语句,1,sleep(1))-- </code>高点。后续可以用脚本进行批量测试。</p>
+<h1 id="less16"><a href="#less16" class="headerlink" title="less16"></a>less16</h1><p>发现和上一关一样，只是变成了双引号+括号闭合。</p>
+<h1 id="less17"><a href="#less17" class="headerlink" title="less17"></a>less17</h1><p>打开源代码，发现和之前不一样的是多出来了一堆检查输入的代码。</p>
+<p><img src="/../images/1731917093305(1).jpg" alt="1731917093305(1)" loading="lazy"></p>
+<p>让我们看看各个函数分别是什么意思</p>
+<p>**get_magic_quotes_gpc():**检查魔法引号是否有开启，魔法引号就是PHP 会自动对所有通过 <code>$_GET</code>、<code>$_POST</code>、<code>$_COOKIE</code> 等方式接收到的用户输入的特殊字符进行转义，即在符号前加上\来转义。</p>
+<p><strong>stripslashes:</strong> 函数移除输入中被魔法引号加入的反斜杠。</p>
+<p><strong>ctype_digit：</strong>检查输入是否为存数字。</p>
+<p><strong>mysql_real_escape_string：</strong>在输入中将特殊字符转义，比魔法引号转义的范围小，且是手动引用。**<code>\x00</code>（NULL 字符）** -&gt; 转义为 <code>\\0</code></p>
+<p>​	<strong>反斜杠（<code>\</code>）</strong> -&gt; 转义为 <code>\\</code></p>
+<p>​	<strong>单引号（<code>&#39;</code>）</strong> -&gt; 转义为 <code>\&#39;</code></p>
+<p>​	<strong>双引号（<code>&quot;</code>）</strong> -&gt; 转义为 <code>\&quot;</code></p>
+<p>​	<strong><code>	\x1a</code>（十六进制）</strong> -&gt; 转义为 <code>\\Z</code></p>
+<p><strong>intval：</strong>将输入转化成整形。</p>
+<p>最后返回修改后的变量。</p>
+<p>最后发现他只对用户名的输入进行检查，那么我们便可以在密码中进行注入。但前提是要获取一个合法的用户名。</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>photos</title>
+    <url>/2024/08/05/photos/</url>
+    <content><![CDATA[<p>测试 测试<br><img src="/images/OIP-C.jpg" alt="OIP-C" loading="lazy"></p>
+]]></content>
   </entry>
   <entry>
     <title>upload1-10</title>
@@ -483,6 +526,12 @@
       <tags>
         <tag>upload-labs</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>博客的创建</title>
+    <url>/2024/08/04/%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%88%9B%E5%BB%BA/</url>
+    <content><![CDATA[<p>搭建过程：<br>    先本地连接GitHub，再在GitHub里创建仓库，然后本地安装hexo，最后将hexo程序上传到GitHub。<br>遇到问题：<br>    1. 初始化hexo时弄错了文件夹<br>      解决：找到hexo程序所在文件夹使用git base初始化<br>    2：上传hexo时出现找不到github的邮箱和用户名的问题<br>      解决：网上寻找，在.deploy-git中的子文件.git找到config，并输入你的邮箱与用户名就可以解决<br>    &#x2F;&#x2F;之前出错的截图没了<br>    3：无法插入图片<br>      解决：b站（<a href="https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1%EF%BC%89">https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&amp;vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1）</a><br>      在source中创建images文件并将你需要的图片放入然后就可以在md文件中引用图片</p>
+]]></content>
   </entry>
   <entry>
     <title>upload11-21</title>
@@ -593,55 +642,6 @@
       <tags>
         <tag>upload-labs</tag>
       </tags>
-  </entry>
-  <entry>
-    <title>less8-17</title>
-    <url>/2024/11/16/less8-17/</url>
-    <content><![CDATA[<h1 id="less8"><a href="#less8" class="headerlink" title="less8"></a>less8</h1><p>和之前的第五关一样可以用因为正确查询和错误查询的页面不同而使用布尔盲注，脚本如何写后续再更新: )</p>
-<h1 id="less9"><a href="#less9" class="headerlink" title="less9"></a>less9</h1><p>由于查询正确与否的页面相同，这边得使用时间盲注。</p>
-<h1 id="less10"><a href="#less10" class="headerlink" title="less10"></a>less10</h1><p>同第九关，不过是双引号闭合。</p>
-<h1 id="less11"><a href="#less11" class="headerlink" title="less11"></a>less11</h1><p>直接看源码<img src="/../images/1731767328998.jpg" alt="1731767328998" loading="lazy"></p>
-<p>发现这关是通过post传输的账户密码，且为单引号闭合，但换汤不换药，我们使用的查询语句是和之前的一样的。我们在username这进行注入便可以注释掉后面检查密码的语句。</p>
-<h1 id="less12"><a href="#less12" class="headerlink" title="less12"></a>less12</h1><p>直接看源码</p>
-<p><img src="/../images/1731807941898(1).jpg" alt="1731807941898(1)" loading="lazy"></p>
-<p>发现和less11一样，不过是被双引号和括号包围。</p>
-<h1 id="less13"><a href="#less13" class="headerlink" title="less13"></a>less13</h1><p>正确查询时无回显，而报错有回显错误信息，我们可以想到less5，同样可以用盲注或者双查询注入。</p>
-<h1 id="less14"><a href="#less14" class="headerlink" title="less14"></a>less14</h1><p>同13关，不过是闭合方式变成了双引号。</p>
-<h1 id="less15"><a href="#less15" class="headerlink" title="less15"></a>less15</h1><p>直接看代码</p>
-<p><img src="/../images/1731811151864.jpg" alt="1731811151864" loading="lazy"></p>
-<p>发现正确查询和错误查询的回显是一样的（除了那个图片），那么我们可以使用盲注。我们这里先尝试时间盲注，我们用if(x,y,z),如果x为true则返回y，否则z。</p>
-<p>我们便可以编辑出这样的注入<code>1&#39; or if(查询语句,sleep(1),1)-- </code>,如果正确查询，则 让页面延迟，如果错误则返回1无延迟。感觉这样效率比<code>1&#39; or if(查询语句,1,sleep(1))-- </code>高点。后续可以用脚本进行批量测试。</p>
-<h1 id="less16"><a href="#less16" class="headerlink" title="less16"></a>less16</h1><p>发现和上一关一样，只是变成了双引号+括号闭合。</p>
-<h1 id="less17"><a href="#less17" class="headerlink" title="less17"></a>less17</h1><p>打开源代码，发现和之前不一样的是多出来了一堆检查输入的代码。</p>
-<p><img src="/../images/1731917093305(1).jpg" alt="1731917093305(1)" loading="lazy"></p>
-<p>让我们看看各个函数分别是什么意思</p>
-<p>**get_magic_quotes_gpc():**检查魔法引号是否有开启，魔法引号就是PHP 会自动对所有通过 <code>$_GET</code>、<code>$_POST</code>、<code>$_COOKIE</code> 等方式接收到的用户输入的特殊字符进行转义，即在符号前加上\来转义。</p>
-<p><strong>stripslashes:</strong> 函数移除输入中被魔法引号加入的反斜杠。</p>
-<p><strong>ctype_digit：</strong>检查输入是否为存数字。</p>
-<p><strong>mysql_real_escape_string：</strong>在输入中将特殊字符转义，比魔法引号转义的范围小，且是手动引用。**<code>\x00</code>（NULL 字符）** -&gt; 转义为 <code>\\0</code></p>
-<p>​	<strong>反斜杠（<code>\</code>）</strong> -&gt; 转义为 <code>\\</code></p>
-<p>​	<strong>单引号（<code>&#39;</code>）</strong> -&gt; 转义为 <code>\&#39;</code></p>
-<p>​	<strong>双引号（<code>&quot;</code>）</strong> -&gt; 转义为 <code>\&quot;</code></p>
-<p>​	<strong><code>	\x1a</code>（十六进制）</strong> -&gt; 转义为 <code>\\Z</code></p>
-<p><strong>intval：</strong>将输入转化成整形。</p>
-<p>最后返回修改后的变量。</p>
-<p>最后发现他只对用户名的输入进行检查，那么我们便可以在密码中进行注入。但前提是要获取一个合法的用户名。</p>
-]]></content>
-      <tags>
-        <tag>sqlilab注入 web</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>博客的创建</title>
-    <url>/2024/08/04/%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%88%9B%E5%BB%BA/</url>
-    <content><![CDATA[<p>搭建过程：<br>    先本地连接GitHub，再在GitHub里创建仓库，然后本地安装hexo，最后将hexo程序上传到GitHub。<br>遇到问题：<br>    1. 初始化hexo时弄错了文件夹<br>      解决：找到hexo程序所在文件夹使用git base初始化<br>    2：上传hexo时出现找不到github的邮箱和用户名的问题<br>      解决：网上寻找，在.deploy-git中的子文件.git找到config，并输入你的邮箱与用户名就可以解决<br>    &#x2F;&#x2F;之前出错的截图没了<br>    3：无法插入图片<br>      解决：b站（<a href="https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1%EF%BC%89">https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&amp;vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1）</a><br>      在source中创建images文件并将你需要的图片放入然后就可以在md文件中引用图片</p>
-]]></content>
-  </entry>
-  <entry>
-    <title>photos</title>
-    <url>/2024/08/05/photos/</url>
-    <content><![CDATA[<p>测试 测试<br><img src="/images/OIP-C.jpg" alt="OIP-C" loading="lazy"></p>
-]]></content>
   </entry>
   <entry>
     <title>外网信息收集</title>
